@@ -8,9 +8,10 @@
     {{-- Kolom Kiri: Info Pelanggan & Pencarian Item --}}
     <div class="lg:col-span-2 bg-white p-6 rounded-md shadow-sm">
         {{-- Customer --}}
-        <div>
+        <div class="relative"> {{-- TAMBAHKAN 'relative' DI SINI --}}
             <label for="customer_search" class="block text-sm font-medium text-gray-700">Search Customer (Name/Phone)</label>
             <input type="text" id="customer_search" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" placeholder="Start typing...">
+            {{-- 'w-full' sekarang akan mengikuti lebar input di atas --}}
             <div id="customer_search_results" class="absolute z-20 w-full bg-white border rounded-md shadow-lg hidden"></div>
             
             <div id="customer_details" class="mt-4 p-4 border rounded-md bg-gray-50 hidden">
@@ -21,9 +22,10 @@
         </div>
 
         {{-- Item --}}
-        <div class="mt-6">
+        <div class="mt-6 relative"> {{-- TAMBAHKAN CLASS 'relative' DI SINI --}}
             <label for="item_search" class="block text-sm font-medium text-gray-700">Search Product [P] or Service [J]</label>
             <input type="text" id="item_search" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" placeholder="Start typing...">
+            {{-- Lebar 'w-full' akan mengikuti parent yang 'relative' --}}
             <div id="item_search_results" class="absolute z-10 w-full bg-white border rounded-md shadow-lg hidden"></div>
         </div>
     </div>
@@ -32,12 +34,11 @@
     <div class="bg-white p-6 rounded-md shadow-sm">
         <h2 class="text-xl font-bold border-b pb-2">Order Details</h2>
         <div id="cart" class="my-4 space-y-2">
-            {{-- Cart items will be here --}}
             <p class="text-gray-500 text-center">Cart is empty.</p>
         </div>
         
-        <div class="border-t pt-4 space-y-2">
-            <div class="flex justify-between font-semibold">
+        <div class="border-t pt-4 space-y-4"> {{-- Ubah space-y-2 menjadi space-y-4 --}}
+            <div class="flex justify-between font-semibold text-lg"> {{-- Buat font lebih besar --}}
                 <span>Grand Total</span>
                 <span id="grand_total">Rp 0</span>
             </div>
@@ -45,11 +46,24 @@
             <div>
                 <label for="payment_method" class="block text-sm font-medium text-gray-700">Payment Method</label>
                 <select id="payment_method" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                    <option value="cash">Cash</option>
+                    <option value="cash" selected>Cash</option>
                     <option value="qris">QRIS</option>
                     <option value="debit">Debit Card</option>
                 </select>
             </div>
+
+            {{-- BAGIAN BARU UNTUK PEMBAYARAN TUNAI --}}
+            <div id="cash_payment_details" class="space-y-4">
+                <div>
+                    <label for="amount_paid" class="block text-sm font-medium text-gray-700">Amount Paid (Rp)</label>
+                    <input type="number" id="amount_paid" placeholder="Enter cash amount" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-lg text-right">
+                </div>
+                <div class="flex justify-between font-semibold text-lg">
+                    <span>Change Due</span>
+                    <span id="change_due">Rp 0</span>
+                </div>
+            </div>
+            {{-- AKHIR BAGIAN BARU --}}
 
             <button id="process_sale" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded mt-4">
                 Process Sale
@@ -66,6 +80,7 @@ $(function() {
     let customer = null;
     let vehicle_id = null;
     let cart = [];
+    let grandTotalValue = 0;
 
     // CUSTOMER SEARCH
     $('#customer_search').on('keyup', function() {
@@ -117,33 +132,84 @@ $(function() {
     function renderCart() {
         if (cart.length === 0) {
             $('#cart').html('<p class="text-gray-500 text-center">Cart is empty.</p>');
-        } else {
-            $('#cart').html('');
-            let grandTotal = 0;
-            cart.forEach((item, index) => {
-                const subtotal = item.quantity * item.price;
-                grandTotal += subtotal;
-                $('#cart').append(`
-                    <div class="flex justify-between items-center text-sm" data-index="${index}">
-                        <div>
-                            <p class="font-semibold">${item.name}</p>
-                            <p class="text-gray-600">Rp ${item.price.toLocaleString('id-ID')}</p>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <input type="number" value="${item.quantity}" class="quantity-input w-16 border-gray-300 rounded-md shadow-sm text-sm">
-                            <span class="w-24 text-right">Rp ${subtotal.toLocaleString('id-ID')}</span>
-                            <button class="remove-item text-red-500 hover:text-red-700">&times;</button>
-                        </div>
-                    </div>
-                `);
-            });
-            $('#grand_total').text('Rp ' + grandTotal.toLocaleString('id-ID'));
+            $('#grand_total').text('Rp 0');
+            grandTotalValue = 0; // Reset nilai total
+            calculateChange(); // Hitung ulang kembalian
+            return;
         }
+        
+        $('#cart').html('');
+        let currentTotal = 0; // Ganti nama variabel agar tidak konflik
+        cart.forEach((item, index) => {
+            const quantity = parseInt(item.quantity) || 0;
+            const price = parseFloat(item.price) || 0;
+            const subtotal = quantity * price;
+            currentTotal += subtotal;
+            
+            $('#cart').append(`
+                <div class="flex justify-between items-center text-sm" data-index="${index}">
+                    <div>
+                        <p class="font-semibold">${item.name}</p>
+                        <p class="text-gray-600">Rp ${price.toLocaleString('id-ID')}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="number" value="${quantity}" class="quantity-input w-16 border-gray-300 rounded-md shadow-sm text-sm" data-index="${index}">
+                        <span class="w-24 text-right">Rp ${subtotal.toLocaleString('id-ID')}</span>
+                        <button class="remove-item text-red-500 hover:text-red-700">&times;</button>
+                    </div>
+                </div>
+            `);
+        });
+        
+        grandTotalValue = currentTotal; // Simpan nilai total mentah
+        $('#grand_total').text('Rp ' + grandTotalValue.toLocaleString('id-ID'));
+        calculateChange(); // Panggil fungsi kalkulasi kembalian setiap kali keranjang di-render ulang
     }
 
-    $(document).on('change', '.quantity-input', function() {
-        const index = $(this).closest('.flex').data('index');
-        cart[index].quantity = parseInt($(this).val());
+    function calculateChange() {
+        const amountPaid = parseFloat($('#amount_paid').val()) || 0;
+        let change = amountPaid - grandTotalValue;
+
+        if (change < 0 || amountPaid === 0) {
+            change = 0;
+        }
+        
+        $('#change_due').text('Rp ' + change.toLocaleString('id-ID'));
+    }
+
+    // EVENT LISTENER BARU UNTUK METODE PEMBAYARAN & NOMINAL BAYAR
+    $('#payment_method').on('change', function() {
+        if ($(this).val() === 'cash') {
+            $('#cash_payment_details').slideDown();
+        } else {
+            $('#cash_payment_details').slideUp();
+            $('#amount_paid').val(''); // Kosongkan input
+            calculateChange(); // Hitung ulang kembalian (jadi 0)
+        }
+    });
+
+    $('#amount_paid').on('input', function() {
+        calculateChange();
+    });
+
+    $(document).on('input', '.quantity-input', function() {
+        const index = $(this).data('index'); // Langsung ambil dari elemen input itu sendiri
+        
+        // Tambahkan pengecekan untuk memastikan index valid
+        if (typeof index === 'undefined' || !cart[index]) {
+            console.error("Invalid index or cart item not found for:", this);
+            return; // Hentikan eksekusi jika index tidak valid
+        }
+
+        const newQuantity = parseInt($(this).val()) || 0; 
+
+        if (newQuantity > 0) {
+            cart[index].quantity = newQuantity;
+        } else {
+            cart[index].quantity = 1;
+            $(this).val(1);
+        }
+        
         renderCart();
     });
 
@@ -157,6 +223,13 @@ $(function() {
     $('#process_sale').on('click', function() {
         if (!customer) { Swal.fire('Error', 'Please select a customer.', 'error'); return; }
         if (cart.length === 0) { Swal.fire('Error', 'Cart cannot be empty.', 'error'); return; }
+
+        const paymentMethod = $('#payment_method').val();
+        const amountPaid = parseFloat($('#amount_paid').val()) || 0;
+        if (paymentMethod === 'cash' && amountPaid < grandTotalValue) {
+            Swal.fire('Error', 'Amount paid is less than the grand total.', 'error');
+            return;
+        }
 
         const saleData = {
             customer_id: customer.id,

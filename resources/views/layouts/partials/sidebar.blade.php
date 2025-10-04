@@ -65,6 +65,12 @@
             <li class="pt-2">
                 <span class="px-2 text-xs font-semibold text-gray-500 uppercase">Transactions</span>
             </li>
+            <li>
+                <a href="{{ route('pos.index') }}" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group {{ request()->routeIs('pos.*') ? 'bg-gray-100 dark:bg-gray-700' : '' }}">
+                <svg class="w-5 h-5 text-gray-500..." ...>...</svg>
+                <span class="flex-1 ms-3 whitespace-nowrap">POS / Kasir</span>
+                </a>
+            </li>
 
             <li>
                 <a href="{{ route('purchases.index') }}" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover-bg-gray-700 group {{ request()->routeIs('purchases.*') ? 'bg-gray-100 dark:bg-gray-700' : '' }}">
@@ -72,29 +78,15 @@
                 <svg class="w-5 h-5 text-gray-500..." ...>...</svg>
                 <span class="flex-1 ms-3 whitespace-nowrap">Pembelian</span>
                 </a>
-            </li>
-            {{-- PEMBATAS MENU (TRANSAKSI) --}}
-            <li class="pt-2">
-                <span class="px-2 text-xs font-semibold text-gray-500 uppercase">Transactions</span>
-            </li>
-            <li>
-                <a href="{{ route('pos.index') }}" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group {{ request()->routeIs('pos.*') ? 'bg-gray-100 dark:bg-gray-700' : '' }}">
-                <svg ...>...</svg>
-                <span class="flex-1 ms-3 whitespace-nowrap">POS / Kasir</span>
-                </a>
-            </li>
-            <li>
-                <a href="{{ route('purchases.index') }}" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group {{ request()->routeIs('purchases.*') ? 'bg-gray-100 dark:bg-gray-700' : '' }}">
-                <svg ...>...</svg>
-                <span class="flex-1 ms-3 whitespace-nowrap">Pembelian</span>
-                </a>
-            </li>
+            </li> 
+            
             <li>
                 <a href="{{ route('sales.history.index') }}" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group {{ request()->routeIs('sales.*') ? 'bg-gray-100 dark:bg-gray-700' : '' }}">
-                <svg ...>...</svg>
+                <svg class="w-5 h-5 text-gray-500..." ...>...</svg>
                 <span class="flex-1 ms-3 whitespace-nowrap">Riwayat Penjualan</span>
                 </a>
             </li>
+           
         </ul>
     </div>
 </aside>

@@ -132,14 +132,20 @@ class SaleController extends Controller
         $term = $request->input('term');
         $products = Product::where('name', 'LIKE', "%{$term}%")
                             ->orWhere('sku', 'LIKE', "%{$term}%")
-                            ->where('stock', '>', 0) // Hanya tampilkan produk yang ada stok
+                            ->where('stock', '>', 0)
                             ->limit(5)->get()->map(fn($p) => [
-                                'id' => $p->id, 'name' => "[P] {$p->name}", 'price' => $p->selling_price, 'type' => 'product'
+                                'id' => $p->id, 
+                                'name' => "[P] {$p->name}", 
+                                'price' => (float) $p->selling_price, // Pastikan ini adalah angka
+                                'type' => 'product'
                             ]);
 
         $services = Service::where('name', 'LIKE', "%{$term}%")
                             ->limit(5)->get()->map(fn($s) => [
-                                'id' => $s->id, 'name' => "[J] {$s->name}", 'price' => $s->price, 'type' => 'service'
+                                'id' => $s->id, 
+                                'name' => "[J] {$s->name}", 
+                                'price' => (int) $s->price, // Pastikan ini adalah angka
+                                'type' => 'service'
                             ]);
         
         return response()->json($products->concat($services));
