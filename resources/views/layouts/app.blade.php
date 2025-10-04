@@ -12,6 +12,7 @@
 
         @vite(['resources/css/app.css'])
         <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet" />
+        <link rel="stylesheet" href="https://cdn.datatables.net/2.0.8/css/dataTables.tailwindcss.min.css">
 
     </head>
     <body class="font-sans antialiased bg-gray-50 dark:bg-gray-900">
@@ -42,6 +43,11 @@
             </main>
         </div>
         
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    
+        <script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
+        
+        <script src="https://cdn.datatables.net/2.0.8/js/dataTables.tailwindcss.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>
         @stack('scripts')
     </body>
