@@ -1,6 +1,6 @@
 @extends('layouts.app')
-
-@section('header', 'Suppliers Management')
+@section('title', 'Supplier')
+@section('header', 'Manajemen Supplier')
 
 @push('styles')
 <style>
@@ -11,17 +11,17 @@
 @section('content')
 <div class="bg-white p-6 rounded-md shadow-sm">
     <button id="addSupplierBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4 inline-block">
-        Add Supplier
+        Tambah Supplier
     </button>
 
     <table id="suppliers-table" class="w-full">
         <thead>
             <tr>
                 <th class="w-10">No</th>
-                <th>Name</th>
-                <th>Phone Number</th>
+                <th>Nama</th>
+                <th>No Telp</th>
                 <th>Contact Person</th>
-                <th class="w-32">Action</th>
+                <th class="w-32">Aksi</th>
             </tr>
         </thead>
     </table>
@@ -54,8 +54,8 @@ $(function () {
     $('#addSupplierBtn').on('click', function () {
         $('#supplierForm')[0].reset();
         $('.error-message').text('');
-        $('#modal_title').text('Add New Supplier');
-        $('#submitBtn').text('Save Supplier');
+        $('#modal_title').text('Tambah Supplier');
+        $('#submitBtn').text('Simpan');
         $('#form_method').val('POST');
         $('#supplierForm').attr('action', '{{ route('suppliers.store') }}');
         $('#supplierModal').removeClass('hidden');
@@ -70,7 +70,7 @@ $(function () {
 
         $.get(url, function(data) {
             $('#modal_title').text('Edit Supplier');
-            $('#submitBtn').text('Update Supplier');
+            $('#submitBtn').text('Simpan Perubahan');
             $('#form_method').val('PUT');
             $('#supplierForm').attr('action', `/suppliers/${supplierId}`);
             $('#name').val(data.name);

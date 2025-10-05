@@ -1,16 +1,18 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\CategoryController;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\ServiceController;
-use App\Http\Controllers\SupplierController;
-use App\Http\Controllers\CustomerController;
-use App\Http\Controllers\VehicleController;
-use App\Http\Controllers\PurchaseController;
-use App\Http\Controllers\SaleController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\SaleController;
+use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\VehicleController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\PurchaseController;
+use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\UserController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -19,6 +21,9 @@ Route::get('/', function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     // Route untuk dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    Route::get('/company', [CompanyController::class, 'index'])->name('company.index');
+    Route::post('/company', [CompanyController::class, 'store'])->name('company.store');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -85,6 +90,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('purchases')->name('purchases.')->group(function () {
         // Route untuk mencari produk via AJAX di form create
         Route::get('/products/search', [PurchaseController::class, 'searchProducts'])->name('products.search');
+        Route::get('/data', [PurchaseController::class, 'data'])->name('data');
     });
     // Gunakan resource controller untuk rute CRUD standar
     Route::resource('purchases', PurchaseController::class)->except(['edit', 'update']);
@@ -96,6 +102,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Endpoint AJAX untuk search
         Route::get('/customers/search', [SaleController::class, 'searchCustomers'])->name('customers.search');
         Route::get('/items/search', [SaleController::class, 'searchItems'])->name('items.search');
+        Route::post('/qris/generate', [SaleController::class, 'generateQris'])->name('qris.generate');
+        Route::get('/qris/status/{orderId}', [SaleController::class, 'checkQrisStatus'])->name('qris.status');
     });
 
     // Grup untuk Riwayat Penjualan
@@ -103,6 +111,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [SaleController::class, 'historyIndex'])->name('history.index');
         Route::get('/data', [SaleController::class, 'historyData'])->name('history.data');
         Route::get('/{sale}', [SaleController::class, 'show'])->name('history.show');
+        Route::get('/{sale}/receipt', [SaleController::class, 'showReceipt'])->name('history.receipt');
+    });
+
+    Route::prefix('users')->name('users.')->group(function () {
+        Route::get('/', [UserController::class, 'index'])->name('index');
+        Route::get('/data', [UserController::class, 'data'])->name('data');
+        Route::post('/', [UserController::class, 'store'])->name('store');
+        Route::get('/{user}/edit', [UserController::class, 'edit'])->name('edit');
+        Route::put('/{user}', [UserController::class, 'update'])->name('update');
+        Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
     });
 });
 

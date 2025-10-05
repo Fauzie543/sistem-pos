@@ -12,13 +12,13 @@
 
             <div class="space-y-4">
                 <div>
-                    <label for="name" class="block text-sm font-medium text-gray-700">Category Name</label>
+                    <label for="name" class="block text-sm font-medium text-gray-700">Nama Kategori</label>
                     <input type="text" name="name" id="name" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
                     <span id="name_error" class="text-red-500 text-xs error-message"></span>
                 </div>
                 
                 <div>
-                    <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                    <label for="description" class="block text-sm font-medium text-gray-700">Deskripsi</label>
                     <textarea name="description" id="description" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"></textarea>
                     <span id="description_error" class="text-red-500 text-xs error-message"></span>
                 </div>
@@ -26,10 +26,10 @@
 
             <div class="flex justify-end items-center border-t pt-4 mt-4">
                 <button type="button" id="cancelBtn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded mr-2">
-                    Cancel
+                    Batal
                 </button>
                 <button type="submit" id="submitBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                    Save Category
+                    Simpan
                 </button>
             </div>
         </form>

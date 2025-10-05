@@ -1,6 +1,6 @@
 @extends('layouts.app')
-
-@section('header', 'Services Management')
+@section('title', 'Service')
+@section('header', 'Manajemen Service')
 
 @push('styles')
 <style>
@@ -11,17 +11,17 @@
 @section('content')
 <div class="bg-white p-6 rounded-md shadow-sm">
     <button id="addServiceBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4 inline-block">
-        Add Service
+        Tambah Service
     </button>
 
     <table id="services-table" class="w-full">
         <thead>
             <tr>
                 <th class="w-10">No</th>
-                <th>Name</th>
-                <th>Category</th>
-                <th>Price</th>
-                <th class="w-32">Action</th>
+                <th>Nama</th>
+                <th>Kategori</th>
+                <th>Harga</th>
+                <th class="w-32">Aksi</th>
             </tr>
         </thead>
     </table>
@@ -54,8 +54,8 @@ $(function () {
     $('#addServiceBtn').on('click', function () {
         $('#serviceForm')[0].reset();
         $('.error-message').text('');
-        $('#modal_title').text('Add New Service');
-        $('#submitBtn').text('Save Service');
+        $('#modal_title').text('Tambah Service');
+        $('#submitBtn').text('Simpan');
         $('#form_method').val('POST');
         $('#serviceForm').attr('action', '{{ route('services.store') }}');
         $('#serviceModal').removeClass('hidden');
@@ -70,7 +70,7 @@ $(function () {
 
         $.get(url, function(data) {
             $('#modal_title').text('Edit Service');
-            $('#submitBtn').text('Update Service');
+            $('#submitBtn').text('Simpan Perubahan');
             $('#form_method').val('PUT');
             $('#serviceForm').attr('action', `/services/${serviceId}`);
             $('#name').val(data.name);

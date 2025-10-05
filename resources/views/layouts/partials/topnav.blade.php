@@ -11,8 +11,13 @@
                 </button>
                 {{-- Logo Aplikasi --}}
                 <a href="{{ route('dashboard') }}" class="flex ms-2 md:me-24">
-                    <img src="https://flowbite.com/docs/images/logo.svg" class="h-8 me-3" alt="FlowBite Logo" />
-                    <span class="self-center text-xl font-semibold sm:text-2xl whitespace-nowrap dark:text-white">BengkelPOS</span>
+                    {{-- Tampilkan logo dari DB, jika tidak ada, tampilkan default --}}
+                    <img src="{{ ($company && $company->logo) ? Storage::url($company->logo) : 'https://flowbite.com/docs/images/logo.svg' }}" class="h-8 me-3" alt="Company Logo" />
+                    
+                    {{-- Tampilkan nama dari DB, jika tidak ada, tampilkan default --}}
+                    <span class="self-center text-xl font-semibold sm:text-2xl whitespace-nowrap dark:text-white">
+                        {{ $company->name ?? 'Sistem POS' }}
+                    </span>
                 </a>
             </div>
             
@@ -36,7 +41,7 @@
                         </div>
                         <ul class="py-1" role="none">
                             <li>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">Profil</a>
+                                <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">Profil</a>
                             </li>
                             <li>
                                 <form method="POST" action="{{ route('logout') }}">

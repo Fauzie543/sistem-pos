@@ -11,12 +11,12 @@
 
             <div class="space-y-4">
                 <div>
-                    <label for="name" class="block text-sm font-medium text-gray-700">Supplier Name</label>
+                    <label for="name" class="block text-sm font-medium text-gray-700">Nama Supplier</label>
                     <input type="text" name="name" id="name" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                     <span id="name_error" class="text-red-500 text-xs error-message"></span>
                 </div>
                 <div>
-                    <label for="phone_number" class="block text-sm font-medium text-gray-700">Phone Number</label>
+                    <label for="phone_number" class="block text-sm font-medium text-gray-700">No Telp</label>
                     <input type="text" name="phone_number" id="phone_number" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                     <span id="phone_number_error" class="text-red-500 text-xs error-message"></span>
                 </div>
@@ -26,7 +26,7 @@
                     <span id="contact_person_error" class="text-red-500 text-xs error-message"></span>
                 </div>
                 <div>
-                    <label for="address" class="block text-sm font-medium text-gray-700">Address</label>
+                    <label for="address" class="block text-sm font-medium text-gray-700">Alamat</label>
                     <textarea name="address" id="address" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"></textarea>
                     <span id="address_error" class="text-red-500 text-xs error-message"></span>
                 </div>
@@ -34,10 +34,10 @@
 
             <div class="flex justify-end items-center border-t pt-4 mt-4">
                 <button type="button" id="cancelBtn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded mr-2">
-                    Cancel
+                    Batal
                 </button>
                 <button type="submit" id="submitBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                    Save Supplier
+                    Simpan
                 </button>
             </div>
         </form>

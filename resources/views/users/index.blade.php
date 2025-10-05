@@ -1,27 +1,28 @@
 @extends('layouts.app')
-@section('title', 'Customers')
-@section('header', 'Manajemen Customer')
+@section('title', 'Users')
+@section('header', 'Manajemen User')
+
 
 @section('content')
 <div class="bg-white p-6 rounded-md shadow-sm">
-    <button id="addCustomerBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4 inline-block">
-        Tambah Customer
+    <button id="addUserBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4 inline-block">
+        Tambah User
     </button>
 
-    <table id="customers-table" class="w-full">
+    <table id="users-table" class="w-full">
         <thead>
             <tr>
                 <th class="w-10">No</th>
-                <th>Nama</th>
-                <th>No Telp</th>
-                <th>Alamat</th>
-                <th class="w-48">Aksi</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th class="w-32">Aksi</th>
             </tr>
         </thead>
     </table>
 </div>
 
-@include('customers.modal')
+@include('users.modal')
 
 @endsection
 
@@ -29,91 +30,105 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 $(function () {
-    var table = $('#customers-table').DataTable({
+    var table = $('#users-table').DataTable({
         processing: true,
         serverSide: true,
-        ajax: '{{ route('customers.data') }}',
+        ajax: '{{ route('users.data') }}',
         columns: [
             { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false, className: 'text-center' },
             { data: 'name', name: 'name' },
-            { data: 'phone_number', name: 'phone_number' },
-            { data: 'address', name: 'address' },
+            { data: 'email', name: 'email' },
+            { data: 'role.name', name: 'role.name' },
             { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center' }
         ],
         dom: '<"flex justify-between items-center mb-4"lf>rt<"flex justify-between items-center mt-4"ip>'
     });
 
-    $('#addCustomerBtn').on('click', function () {
-        $('#customerForm')[0].reset();
+    // Buka Modal Tambah
+    $('#addUserBtn').on('click', function () {
+        $('#userForm')[0].reset();
         $('.error-message').text('');
-        $('#modal_title').text('Tambah Customer');
-        $('#submitBtn').text('simpan');
+        $('#password_fields').show();
+        $('#modal_title').text('Tambah User Baru');
+        $('#submitBtn').text('Simpan');
         $('#form_method').val('POST');
-        $('#customerForm').attr('action', '{{ route('customers.store') }}');
-        $('#customerModal').removeClass('hidden');
+        $('#userForm').attr('action', '{{ route('users.store') }}');
+        $('#userId').val('');
+        $('#userModal').removeClass('hidden');
     });
 
-    $('#customers-table').on('click', '.edit-btn', function () {
-        var customerId = $(this).data('id');
-        var url = `/customers/${customerId}/edit`;
-        
-        $('#customerForm')[0].reset();
-        $('.error-message').text('');
+    // Buka Modal Edit
+    $('#users-table').on('click', '.edit-btn', function () {
+        var userId = $(this).data('id');
+        var url = `/users/${userId}/edit`;
 
+        $('#userForm')[0].reset();
+        $('.error-message').text('');
+        $('#password_fields').hide(); // Sembunyikan field password saat edit
+        
         $.get(url, function(data) {
-            $('#modal_title').text('Edit Customer');
+            $('#modal_title').text('Edit User');
             $('#submitBtn').text('Simpan Perubahan');
             $('#form_method').val('PUT');
-            $('#customerForm').attr('action', `/customers/${customerId}`);
+            $('#userForm').attr('action', `/users/${userId}`);
+            $('#userId').val(data.id);
+            
             $('#name').val(data.name);
-            $('#phone_number').val(data.phone_number);
-            $('#address').val(data.address);
-            $('#customerModal').removeClass('hidden');
+            $('#email').val(data.email);
+            $('#role_id').val(data.role_id);
+            $('#password_info').text('Kosongkan jika tidak ingin mengubah password.');
+
+            $('#userModal').removeClass('hidden');
         });
     });
 
+    // Tutup Modal
     $('#cancelBtn, .close-modal').on('click', function () {
-        $('#customerModal').addClass('hidden');
+        $('#userModal').addClass('hidden');
     });
 
-    $('#customerForm').on('submit', function (e) {
+    // Submit Form (Tambah/Edit)
+    $('#userForm').on('submit', function (e) {
         e.preventDefault();
+        $('.error-message').text('');
         var url = $(this).attr('action');
         var formData = $(this).serialize();
 
         $.ajax({
             url: url,
-            method: 'POST',
+            method: 'POST', // Method tetap POST, _method=PUT akan dihandle Laravel
             data: formData,
-            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
             success: function (response) {
-                $('#customerModal').addClass('hidden');
+                $('#userModal').addClass('hidden');
                 Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: response.success, showConfirmButton: false, timer: 3000 });
                 table.ajax.reload();
             },
             error: function (xhr) {
-                $('.error-message').text('');
                 if (xhr.status === 422) {
                     var errors = xhr.responseJSON.errors;
                     $.each(errors, function (key, value) {
                         $('#' + key + '_error').text(value[0]);
                     });
                 } else {
-                    Swal.fire({ icon: 'error', title: 'Oops...', text: 'Something went wrong!' });
+                    Swal.fire({ icon: 'error', title: 'Error!', text: 'Something went wrong.' });
                 }
             }
         });
     });
-
-    $('#customers-table').on('click', '.delete-btn', function (e) {
+    
+    // Hapus Data
+    $('#users-table').on('click', '.delete-btn', function (e) {
         e.preventDefault();
         var deleteUrl = $(this).data('url');
 
         Swal.fire({
-            title: 'Are you sure?',
+            title: 'Anda yakin?',
+            text: "Data yang dihapus tidak dapat dikembalikan!",
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonText: 'Yes, delete it!'
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Ya, hapus!'
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
@@ -125,7 +140,7 @@ $(function () {
                         table.ajax.reload();
                     },
                     error: function(xhr) {
-                        Swal.fire('Failed!', xhr.responseJSON.error || 'There was a problem.', 'error');
+                        Swal.fire('Gagal!', xhr.responseJSON.error || 'Terjadi kesalahan.', 'error');
                     }
                 });
             }

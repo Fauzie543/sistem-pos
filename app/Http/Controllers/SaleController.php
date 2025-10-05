@@ -7,6 +7,9 @@ use App\Models\Product;
 use App\Models\Service;
 use App\Models\Sale;
 use App\Models\SaleDetail;
+use Midtrans\Config;
+use Midtrans\CoreApi;
+use Midtrans\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -54,7 +57,7 @@ class SaleController extends Controller
 
             // 3. Buat record utama di tabel 'sales'
             $sale = Sale::create([
-                'invoice_number' => 'INV-' . time(), // Buat nomor invoice unik
+                'invoice_number' => $request->invoice_number ?? 'INV-' . time(), // Buat nomor invoice unik
                 'customer_id' => $request->customer_id,
                 'vehicle_id' => $request->vehicle_id, // Bisa null
                 'user_id' => Auth::id(),
@@ -149,5 +152,65 @@ class SaleController extends Controller
                             ]);
         
         return response()->json($products->concat($services));
+    }
+
+    public function generateQris(Request $request)
+    {
+        // Validasi input
+        $request->validate(['amount' => ['required', 'numeric', 'min:1']]);
+
+        // 1. Konfigurasi Midtrans
+        Config::$serverKey = config('services.midtrans.server_key', env('MIDTRANS_SERVER_KEY'));
+        Config::$isProduction = config('services.midtrans.is_production', env('MIDTRANS_IS_PRODUCTION'));
+        Config::$isSanitized = true;
+        Config::$is3ds = true;
+
+        // 2. Buat parameter untuk dikirim ke Midtrans
+        $orderId = 'BENGKEL-' . uniqid(); // Buat ID Order yang unik
+        $params = [
+            'payment_type' => 'qris',
+            'transaction_details' => [
+                'order_id' => $orderId,
+                'gross_amount' => $request->amount,
+            ],
+        ];
+
+        try {
+            // 3. Panggil API Midtrans untuk membuat transaksi
+            $response = CoreApi::charge($params);
+
+            // 4. Kirim kembali data yang dibutuhkan ke frontend
+            return response()->json([
+                'order_id' => $orderId,
+                'qr_code_url' => $response->actions[0]->url, // URL gambar QR code
+                'expiry_time' => $response->expiry_time,
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function checkQrisStatus($orderId)
+    {
+        // Konfigurasi Midtrans
+        Config::$serverKey = config('services.midtrans.server_key', env('MIDTRANS_SERVER_KEY'));
+        Config::$isProduction = config('services.midtrans.is_production', env('MIDTRANS_IS_PRODUCTION'));
+
+        try {
+            // Panggil API Midtrans untuk mendapatkan status
+            $status = Transaction::status($orderId);
+
+            // Kirim status kembali ke frontend
+            return response()->json(['transaction_status' => $status->transaction_status]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Transaction not found or error.'], 404);
+        }
+    }
+
+    public function showReceipt(Sale $sale)
+    {
+        $sale->load(['user', 'details.product', 'details.service']);
+        return view('sales.receipt', compact('sale'));
     }
 }

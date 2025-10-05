@@ -1,6 +1,7 @@
 @extends('layouts.app')
+@section('title', 'Kasir')
 
-@section('header', 'Point of Sale (POS)')
+@section('header', 'Kasir')
 
 @section('content')
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -71,6 +72,31 @@
         </div>
     </div>
 </div>
+
+{{-- MODAL UNTUK MENAMPILKAN QRIS --}}
+<div id="qrisModal" class="fixed inset-0 bg-gray-600 bg-opacity-75 hidden flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm text-center">
+        <div class="flex justify-between items-center border-b pb-3 mb-4">
+            <h3 class="text-xl font-semibold">Scan QRIS to Pay</h3>
+            <button id="closeQrisModal" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+        </div>
+        
+        {{-- Tempat untuk menampilkan QR Code --}}
+        <div id="qris-container" class="my-4">
+            {{-- Spinner loading --}}
+            <div id="qris-spinner" class="flex justify-center items-center h-48">
+                <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-gray-900"></div>
+            </div>
+            {{-- Gambar QR Code --}}
+            <img id="qris-image" src="" alt="QRIS Code" class="mx-auto hidden">
+        </div>
+
+        <p class="font-bold text-2xl" id="qris-amount"></p>
+        <p class="text-sm text-gray-500" id="qris-expiry"></p>
+    </div>
+</div>
+<iframe id="receipt-iframe" style="display:none;"></iframe>
+
 @endsection
 
 @push('scripts')
@@ -81,6 +107,9 @@ $(function() {
     let vehicle_id = null;
     let cart = [];
     let grandTotalValue = 0;
+    let currentQrisOrderId = null; // <-- TAMBAHKAN INI
+    let qrisPollingInterval = null;
+    let isQrisPaid = false;
 
     // CUSTOMER SEARCH
     $('#customer_search').on('keyup', function() {
@@ -177,14 +206,102 @@ $(function() {
         $('#change_due').text('Rp ' + change.toLocaleString('id-ID'));
     }
 
+    // GENERATE QRIS
+    function generateQrCode() {
+        if (grandTotalValue <= 0) {
+            Swal.fire('Error', 'Cannot generate QRIS for empty cart.', 'error');
+            $('#payment_method').val('cash').trigger('change'); // Kembalikan ke cash
+            return;
+        }
+
+        // Tampilkan modal dan spinner
+        $('#qrisModal').removeClass('hidden');
+        $('#qris-spinner').show();
+        $('#qris-image').hide();
+        $('#qris-amount').text('');
+        $('#qris-expiry').text('');
+
+        $.ajax({
+            url: '{{ route("pos.qris.generate") }}',
+            method: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                amount: grandTotalValue
+            },
+            success: function(response) {
+                // Sembunyikan spinner dan tampilkan QR
+                $('#qris-spinner').hide();
+                $('#qris-image').attr('src', response.qr_code_url).show();
+                $('#qris-amount').text('Rp ' + grandTotalValue.toLocaleString('id-ID'));
+                $('#qris-expiry').text('Expires at: ' + response.expiry_time);
+                
+                // SIMPAN ORDER ID DAN MULAI POLLING SETELAH DAPAT RESPON
+                currentQrisOrderId = response.order_id; 
+                startQrisPolling(currentQrisOrderId);
+            },
+            error: function() {
+                Swal.fire('Error', 'Failed to generate QRIS code. Please try again.', 'error');
+                $('#qrisModal').addClass('hidden');
+                $('#payment_method').val('cash').trigger('change');
+            }
+        });
+    }
+
+    function startQrisPolling(orderId) {
+        isQrisPaid = false; 
+        // Hentikan polling sebelumnya jika ada
+        if (qrisPollingInterval) {
+            clearInterval(qrisPollingInterval);
+        }
+
+        // Mulai polling baru setiap 3 detik
+        qrisPollingInterval = setInterval(function() {
+
+            if (isQrisPaid) { 
+                stopQrisPolling();
+                return;
+            }
+
+            $.get(`/pos/qris/status/${orderId}`, function(data) {
+                // Jika pembayaran berhasil (settlement)
+                if (data.transaction_status === 'settlement' && !isQrisPaid) {
+                isQrisPaid = true; // <-- SET FLAG MENJADI TRUE
+                
+                stopQrisPolling();
+                $('#qrisModal').addClass('hidden');
+                $('#process_sale').click(); 
+            }
+            }).fail(function() {
+                // Hentikan polling jika transaksi tidak ditemukan (misal, expired)
+                stopQrisPolling();
+            });
+        }, 3000); // Cek setiap 3 detik
+    }
+
+    function stopQrisPolling() {
+        if (qrisPollingInterval) {
+            clearInterval(qrisPollingInterval);
+            qrisPollingInterval = null;
+        }
+    }
+
     // EVENT LISTENER BARU UNTUK METODE PEMBAYARAN & NOMINAL BAYAR
     $('#payment_method').on('change', function() {
-        if ($(this).val() === 'cash') {
+        const method = $(this).val();
+        if (method === 'cash') {
             $('#cash_payment_details').slideDown();
+            $('#process_sale').text('Process Sale'); // Kembalikan teks tombol
         } else {
             $('#cash_payment_details').slideUp();
-            $('#amount_paid').val(''); // Kosongkan input
-            calculateChange(); // Hitung ulang kembalian (jadi 0)
+            $('#amount_paid').val('');
+            calculateChange();
+
+            if (method === 'qris') {
+                generateQrCode();
+                $('#process_sale').text('Confirm Payment & Process Sale'); // Ubah teks tombol
+            } else {
+                $('#process_sale').text('Process Sale');
+            }
         }
     });
 
@@ -213,6 +330,12 @@ $(function() {
         renderCart();
     });
 
+    $('#closeQrisModal').on('click', function() {
+        stopQrisPolling(); // <-- HENTIKAN POLLING
+        $('#qrisModal').addClass('hidden');
+        $('#payment_method').val('cash').trigger('change');
+    });
+
     $(document).on('click', '.remove-item', function() {
         const index = $(this).closest('.flex').data('index');
         cart.splice(index, 1);
@@ -221,21 +344,33 @@ $(function() {
 
     // PROCESS SALE
     $('#process_sale').on('click', function() {
-        if (!customer) { Swal.fire('Error', 'Please select a customer.', 'error'); return; }
-        if (cart.length === 0) { Swal.fire('Error', 'Cart cannot be empty.', 'error'); return; }
+        $(this).prop('disabled', true).text('Processing...');
+        if (!customer) {
+            Swal.fire('Error', 'Please select a customer.', 'error');
+            $('#process_sale').prop('disabled', false).text('Process Sale'); // Aktifkan kembali jika error
+            return;
+        }
+        if (cart.length === 0) {
+            Swal.fire('Error', 'Cart cannot be empty.', 'error');
+            $('#process_sale').prop('disabled', false).text('Process Sale'); // Aktifkan kembali jika error
+            return;
+        }
 
         const paymentMethod = $('#payment_method').val();
         const amountPaid = parseFloat($('#amount_paid').val()) || 0;
         if (paymentMethod === 'cash' && amountPaid < grandTotalValue) {
             Swal.fire('Error', 'Amount paid is less than the grand total.', 'error');
+            $('#process_sale').prop('disabled', false).text('Process Sale'); // Aktifkan kembali jika error
             return;
         }
 
         const saleData = {
             customer_id: customer.id,
             vehicle_id: vehicle_id,
-            payment_method: $('#payment_method').val(),
+            payment_method: paymentMethod,
             items: cart,
+            // Tambahkan baris ini untuk menyimpan Order ID dari Midtrans
+            invoice_number: (paymentMethod === 'qris' && currentQrisOrderId) ? currentQrisOrderId : 'INV-' + Date.now(),
         };
 
         $.ajax({
@@ -246,23 +381,43 @@ $(function() {
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
             success: function(response) {
                 Swal.fire({
-                    title: 'Success!',
-                    text: response.success,
-                    icon: 'success',
-                    confirmButtonText: 'View Details'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        window.location.href = `/sales/${response.sale_id}`;
-                    }
-                });
-                // Reset form
-                customer = null; cart = []; vehicle_id = null;
-                $('#customer_details').hide();
-                $('#customer_search').val('');
-                renderCart();
+                title: 'Success!',
+                text: response.success,
+                icon: 'success',
+                showCancelButton: true,
+                confirmButtonText: 'Print Receipt',
+                cancelButtonText: 'New Sale',
+                buttonsStyling: false,
+                customClass: {
+                    confirmButton: 'bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded',
+                    cancelButton: 'bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded ml-2'
+                }
+            }).then((result) => {
+                // Jika kasir menekan tombol "Print Receipt"
+                if (result.isConfirmed) {
+                    const receiptUrl = `/sales/${response.sale_id}/receipt`;
+                    
+                    // Muat konten struk ke iframe dan cetak
+                    $('#receipt-iframe').attr('src', receiptUrl);
+                    $('#receipt-iframe').on('load', function() {
+                        this.contentWindow.print();
+                    });
+                }
+            });
+
+            // Reset form untuk transaksi selanjutnya
+            customer = null; cart = []; vehicle_id = null; currentQrisOrderId = null; isQrisPaid = false;
+            $('#customer_details').hide();
+            $('#customer_search').val('');
+            $('#payment_method').val('cash').trigger('change');
+            renderCart();
+
+            $('#process_sale').prop('disabled', false).text('Process Sale');
             },
             error: function(xhr) {
                 Swal.fire('Error!', xhr.responseJSON.error || 'Something went wrong.', 'error');
+                // 3. Aktifkan kembali tombol jika terjadi error
+                $('#process_sale').prop('disabled', false).text('Process Sale');
             }
         });
     });

@@ -12,14 +12,14 @@
             <div class="space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label for="name" class="block text-sm font-medium text-gray-700">Product Name</label>
+                        <label for="name" class="block text-sm font-medium text-gray-700">Nama Produk</label>
                         <input type="text" name="name" id="name" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                         <span id="name_error" class="text-red-500 text-xs error-message"></span>
                     </div>
                     <div>
-                        <label for="category_id" class="block text-sm font-medium text-gray-700">Category</label>
+                        <label for="category_id" class="block text-sm font-medium text-gray-700">Kategori</label>
                         <select name="category_id" id="category_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                            <option value="" disabled selected>-- Select Category --</option>
+                            <option value="" disabled selected>-- Pilih Kategori --</option>
                             @foreach($categories as $category)
                                 <option value="{{ $category->id }}">{{ $category->name }}</option>
                             @endforeach
@@ -30,12 +30,12 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label for="purchase_price" class="block text-sm font-medium text-gray-700">Purchase Price (Rp)</label>
+                        <label for="purchase_price" class="block text-sm font-medium text-gray-700">Harga Beli (Rp)</label>
                         <input type="number" name="purchase_price" id="purchase_price" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                         <span id="purchase_price_error" class="text-red-500 text-xs error-message"></span>
                     </div>
                     <div>
-                        <label for="selling_price" class="block text-sm font-medium text-gray-700">Selling Price (Rp)</label>
+                        <label for="selling_price" class="block text-sm font-medium text-gray-700">Harga Jual (Rp)</label>
                         <input type="number" name="selling_price" id="selling_price" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                         <span id="selling_price_error" class="text-red-500 text-xs error-message"></span>
                     </div>
@@ -61,24 +61,24 @@
                         <span id="sku_error" class="text-red-500 text-xs error-message"></span>
                     </div>
                     <div>
-                        <label for="storage_location" class="block text-sm font-medium text-gray-700">Storage Location (e.g., Rak A1)</label>
+                        <label for="storage_location" class="block text-sm font-medium text-gray-700">Tempat Penyimpanan (e.g., Rak A1)</label>
                         <input type="text" name="storage_location" id="storage_location" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                         <span id="storage_location_error" class="text-red-500 text-xs error-message"></span>
                     </div>
                 </div>
 
                 <div>
-                    <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                    <label for="description" class="block text-sm font-medium text-gray-700">Deskripsi</label>
                     <textarea name="description" id="description" rows="2" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"></textarea>
                 </div>
             </div>
 
             <div class="flex justify-end items-center border-t pt-4 mt-4">
                 <button type="button" id="cancelBtn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded mr-2">
-                    Cancel
+                    Batal
                 </button>
                 <button type="submit" id="submitBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                    Save Product
+                    Simpan
                 </button>
             </div>
         </form>

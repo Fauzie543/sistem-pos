@@ -1,11 +1,11 @@
 @extends('layouts.app')
-
-@section('header', 'Purchase Transactions')
+@section('title', 'Pembelian')
+@section('header', 'Transaksi Pembelian')
 
 @section('content')
 <div class="bg-white p-6 rounded-md shadow-sm">
     <a href="{{ route('purchases.create') }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4 inline-block">
-        Create New Purchase
+        Tambah Pembelian
     </a>
 
     @if (session('success'))
@@ -18,11 +18,11 @@
         <thead>
             <tr>
                 <th class="w-10">No</th>
-                <th>Date</th>
+                <th>Tanggal</th>
                 <th>Supplier</th>
-                <th>Total Amount</th>
+                <th>Total Harga</th>
                 <th>Recorded By</th>
-                <th class="w-32">Action</th>
+                <th class="w-32">Aksi</th>
             </tr>
         </thead>
     </table>
@@ -44,6 +44,8 @@ $(function () {
             { data: 'user.name', name: 'user.name' },
             { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center' }
         ],
+        dom: '<"flex justify-between items-center mb-4"lf>rt<"flex justify-between items-center mt-4"ip>'
+        
     });
 });
 </script>

@@ -1,6 +1,6 @@
 @extends('layouts.app')
-
-@section('header', 'Products Management')
+@section('title', 'Produk')
+@section('header', 'Manajemen Produk')
 
 @push('styles')
 <style>
@@ -11,18 +11,18 @@
 @section('content')
 <div class="bg-white p-6 rounded-md shadow-sm">
     <button id="addProductBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4 inline-block">
-        Add Product
+        Tambah Produk
     </button>
 
     <table id="products-table" class="w-full">
         <thead>
             <tr>
                 <th class="w-10">No</th>
-                <th>Name</th>
-                <th>Category</th>
-                <th>Selling Price</th>
+                <th>Nama Produk</th>
+                <th>Kategori</th>
+                <th>Harga Jual</th>
                 <th class="w-16">Stock</th>
-                <th class="w-32">Action</th>
+                <th class="w-32">Aksi</th>
             </tr>
         </thead>
     </table>
@@ -56,8 +56,8 @@ $(function () {
     $('#addProductBtn').on('click', function () {
         $('#productForm')[0].reset();
         $('.error-message').text('');
-        $('#modal_title').text('Add New Product');
-        $('#submitBtn').text('Save Product');
+        $('#modal_title').text('Tambah Produk');
+        $('#submitBtn').text('Simpan');
         $('#form_method').val('POST');
         $('#productForm').attr('action', '{{ route('products.store') }}');
         $('#productModal').removeClass('hidden');
@@ -71,8 +71,8 @@ $(function () {
         $('.error-message').text('');
 
         $.get(url, function(data) {
-            $('#modal_title').text('Edit Product');
-            $('#submitBtn').text('Update Product');
+            $('#modal_title').text('Edit Produk');
+            $('#submitBtn').text('Simpan Perubahan');
             $('#form_method').val('PUT');
             $('#productForm').attr('action', `/products/${productId}`);
 

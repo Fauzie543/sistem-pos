@@ -11,7 +11,7 @@
             
             <div class="space-y-4">
                 <div>
-                    <label for="license_plate" class="block text-sm font-medium text-gray-700">License Plate</label>
+                    <label for="license_plate" class="block text-sm font-medium text-gray-700">No Kendaraan</label>
                     <input type="text" name="license_plate" id="license_plate" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                     <span id="license_plate_error" class="text-red-500 text-xs error-message"></span>
                 </div>
@@ -28,14 +28,14 @@
                     </div>
                 </div>
                 <div>
-                    <label for="year" class="block text-sm font-medium text-gray-700">Year</label>
+                    <label for="year" class="block text-sm font-medium text-gray-700">Tahun</label>
                     <input type="number" name="year" id="year" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                     <span id="year_error" class="text-red-500 text-xs error-message"></span>
                 </div>
             </div>
 
             <div class="flex justify-end items-center border-t pt-4 mt-4">
-                <button type="button" id="cancelBtn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded mr-2">Cancel</button>
+                <button type="button" id="cancelBtn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded mr-2">Batal</button>
                 <button type="submit" id="submitBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"></button>
             </div>
         </form>

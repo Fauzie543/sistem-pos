@@ -75,4 +75,9 @@ class Sale extends Model
         return $this->belongsToMany(Service::class, 'sale_details')
             ->withPivot('quantity', 'price', 'subtotal');
     }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 }

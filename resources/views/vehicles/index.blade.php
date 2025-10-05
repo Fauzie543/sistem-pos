@@ -1,5 +1,5 @@
 @extends('layouts.app')
-
+@section('title', 'Kendaraan')
 @section('header')
     Vehicles for: {{ $customer->name }}
 @endsection
@@ -20,18 +20,18 @@
 
 <div class="bg-white p-6 rounded-md shadow-sm">
     <button id="addVehicleBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4 inline-block">
-        Add Vehicle
+        Tambah Kendaraan
     </button>
 
     <table id="vehicles-table" class="w-full">
         <thead>
             <tr>
                 <th class="w-10">No</th>
-                <th>License Plate</th>
+                <th>No Kendaraan</th>
                 <th>Brand</th>
                 <th>Model</th>
-                <th>Year</th>
-                <th class="w-32">Action</th>
+                <th>Tahun</th>
+                <th class="w-32">Aksi</th>
             </tr>
         </thead>
     </table>
@@ -57,13 +57,14 @@ $(function () {
             { data: 'year', name: 'year' },
             { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center' }
         ],
+        dom: '<"flex justify-between items-center mb-4"lf>rt<"flex justify-between items-center mt-4"ip>'
     });
 
     $('#addVehicleBtn').on('click', function () {
         $('#vehicleForm')[0].reset();
         $('.error-message').text('');
-        $('#modal_title').text('Add New Vehicle');
-        $('#submitBtn').text('Save Vehicle');
+        $('#modal_title').text('Tambah Kendaraan');
+        $('#submitBtn').text('Simpan');
         $('#form_method').val('POST');
         $('#vehicleForm').attr('action', '{{ route('vehicles.store') }}');
         $('#vehicleModal').removeClass('hidden');
@@ -77,8 +78,8 @@ $(function () {
         $('.error-message').text('');
         
         $.get(url, function(data) {
-            $('#modal_title').text('Edit Vehicle');
-            $('#submitBtn').text('Update Vehicle');
+            $('#modal_title').text('Edit Kendaraan');
+            $('#submitBtn').text('Simpan Perubahan');
             $('#form_method').val('PUT');
             $('#vehicleForm').attr('action', `/vehicles/${vehicleId}`);
             $('#license_plate').val(data.license_plate);

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('header', 'Create New Purchase Transaction')
+@section('header', 'Tambah Pembelian')
 
 @section('content')
 <form action="{{ route('purchases.store') }}" method="POST" class="bg-white p-6 rounded-md shadow-sm">
@@ -15,7 +15,7 @@
     {{-- Purchase Info --}}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div>
-            <label for="purchase_date" class="block text-sm font-medium text-gray-700">Purchase Date</label>
+            <label for="purchase_date" class="block text-sm font-medium text-gray-700">Tanggal Pembelian</label>
             <input type="date" name="purchase_date" id="purchase_date" value="{{ old('purchase_date', date('Y-m-d')) }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
         </div>
         <div>
@@ -34,7 +34,7 @@
 
     {{-- Product Search --}}
     <div class="border-t pt-4">
-        <label for="product_search" class="block text-sm font-medium text-gray-700">Search Product (by Name or SKU)</label>
+        <label for="product_search" class="block text-sm font-medium text-gray-700">Cari Produk (by Name or SKU)</label>
         <div class="relative">
             <input type="text" id="product_search" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" placeholder="Start typing to search...">
             <div id="search_results" class="absolute z-10 w-full bg-white border rounded-md shadow-lg hidden"></div>
@@ -43,13 +43,13 @@
 
     {{-- Product List Table --}}
     <div class="mt-6">
-        <h3 class="text-lg font-medium">Purchased Products</h3>
+        <h3 class="text-lg font-medium">Pembelian Peoduk</h3>
         <table class="w-full mt-2">
             <thead>
                 <tr class="border-b">
-                    <th class="text-left py-2">Product</th>
-                    <th class="w-32 text-left py-2">Quantity</th>
-                    <th class="w-48 text-left py-2">Purchase Price (Rp)</th>
+                    <th class="text-left py-2">Produk</th>
+                    <th class="w-32 text-left py-2">Kuantitas</th>
+                    <th class="w-48 text-left py-2">Harga Pembelian (Rp)</th>
                     <th class="w-48 text-right py-2">Subtotal</th>
                     <th class="w-16 py-2"></th>
                 </tr>
@@ -68,8 +68,8 @@
     </div>
 
     <div class="flex justify-end mt-6">
-        <a href="{{ route('purchases.index') }}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded mr-2">Cancel</a>
-        <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Save Purchase</button>
+        <a href="{{ route('purchases.index') }}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded mr-2">Batal</a>
+        <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Simpan</button>
     </div>
 </form>
 @endsection

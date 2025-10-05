@@ -1,6 +1,6 @@
 @extends('layouts.app')
-
-@section('header', 'Categories Management')
+@section('title', 'Kategori')
+@section('header', 'Manajemen Kategori')
 
 @push('styles')
 <style>
@@ -11,16 +11,16 @@
 @section('content')
 <div class="bg-white p-6 rounded-md shadow-sm">
     <button id="addCategoryBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4 inline-block">
-        Add Category
+        Tambah Kategori
     </button>
 
     <table id="categories-table" class="w-full">
         <thead>
             <tr>
                 <th class="w-10">No</th>
-                <th>Name</th>
-                <th>Description</th>
-                <th class="w-32">Action</th>
+                <th>Nama</th>
+                <th>Deskripsi</th>
+                <th class="w-32">Aksi</th>
             </tr>
         </thead>
     </table>
@@ -54,8 +54,8 @@ $(function () {
     $('#addCategoryBtn').on('click', function () {
         $('#categoryForm')[0].reset();
         $('.error-message').text('');
-        $('#modal_title').text('Add New Category');
-        $('#submitBtn').text('Save Category');
+        $('#modal_title').text('Tambah Kategori');
+        $('#submitBtn').text('Simpan');
         $('#form_method').val('POST');
         $('#categoryForm').attr('action', '{{ route('categories.store') }}');
         $('#categoryModal').removeClass('hidden');
@@ -70,8 +70,8 @@ $(function () {
         $('.error-message').text('');
 
         $.get(url, function(data) {
-            $('#modal_title').text('Edit Category');
-            $('#submitBtn').text('Update Category');
+            $('#modal_title').text('Edit Kategori');
+            $('#submitBtn').text('Simpan Perubahan');
             $('#form_method').val('PUT');
             $('#categoryForm').attr('action', `/categories/${categoryId}`);
 
