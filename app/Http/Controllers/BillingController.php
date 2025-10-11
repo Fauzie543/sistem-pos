@@ -3,51 +3,13 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Plan;
 
 class BillingController extends Controller
 {
     public function index()
     {
-        // Definisikan semua paket dan harga di sini
-        $plans = [
-            'bengkel' => [
-                'name' => 'POS Bengkel',
-                'description' => 'Paket lengkap untuk manajemen bengkel modern.',
-                'features' => [
-                    'Manajemen Produk & Stok',
-                    'Manajemen Jasa & Mekanik',
-                    'Manajemen Pelanggan & Kendaraan',
-                    'Transaksi Kasir (POS)',
-                    'Pembayaran QRIS Dinamis',
-                    'Manajemen Pembelian',
-                    'Laporan Penjualan',
-                ],
-                'tiers' => [
-                    'monthly' => ['price' => 150000, 'months' => 1],
-                    'semi_annually' => ['price' => 750000, 'months' => 6], // Bayar 5 bulan, gratis 1
-                    'annually' => ['price' => 1500000, 'months' => 12], // Bayar 10 bulan, gratis 2
-                ],
-            ],
-            'cafe' => [
-                'name' => 'POS F&B',
-                'description' => 'Sistem kasir optimal untuk Cafe, Resto, atau Booth Minuman.',
-                'features' => [
-                    'Manajemen Menu & Stok Bahan',
-                    'Manajemen Pelanggan',
-                    'Transaksi Kasir (POS)',
-                    'Pembayaran QRIS Dinamis',
-                    'Manajemen Pembelian Bahan',
-                    'Laporan Penjualan',
-                    'Manajemen Meja & Dapur (Contoh)',
-                ],
-                'tiers' => [
-                    'monthly' => ['price' => 120000, 'months' => 1],
-                    'semi_annually' => ['price' => 600000, 'months' => 6], // Bayar 5 bulan, gratis 1
-                    'annually' => ['price' => 1200000, 'months' => 12], // Bayar 10 bulan, gratis 2
-                ],
-            ],
-        ];
-
+        $plans = Plan::where('is_active', true)->with('tiers')->get();
         return view('billing.index', compact('plans'));
     }
 

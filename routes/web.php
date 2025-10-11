@@ -17,6 +17,7 @@ use App\Http\Controllers\BillingController;
 use App\Http\Controllers\Settings\PaymentGatewayController;
 use App\Http\Controllers\SuperAdmin\FeatureManagementController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
+use App\Http\Controllers\SuperAdmin\PlanController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -36,6 +37,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('role:superadmin')->prefix('superadmin')->name('superadmin.')->group(function () {
         Route::get('features', [FeatureManagementController::class, 'index'])->name('features.index');
         Route::post('features', [FeatureManagementController::class, 'update'])->name('features.update');
+        Route::resource('plans', PlanController::class);
     });
 
     Route::get('/billing', [BillingController::class, 'index'])->name('billing.index');
