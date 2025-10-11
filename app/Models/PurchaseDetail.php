@@ -5,17 +5,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\Multitenancy\Models\Concerns\UsesTenantConnection;
 
 class PurchaseDetail extends Model
 {
-    use HasFactory;
+    use HasFactory, UsesTenantConnection;
 
     protected $fillable = [
         'purchase_id',
         'product_id',
         'quantity',
         'price',
-        'subtotal',
+        'subtotal', 
+        'company_id'
     ];
 
     public function purchase(): BelongsTo

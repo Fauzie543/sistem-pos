@@ -13,11 +13,11 @@ use Midtrans\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Yajra\DataTables\Facades\DataTables;
 
 class SaleController extends Controller
 {
-    // === HALAMAN UTAMA KASIR (POS) ===
     public function index()
     {
         return view('sales.pos');
@@ -26,8 +26,12 @@ class SaleController extends Controller
     // === PROSES PENYIMPANAN TRANSAKSI PENJUALAN ===
     public function store(Request $request)
     {
+        $companyId = auth()->user()->company_id;
         $request->validate([
-            'customer_id' => ['required', 'exists:customers,id'],
+            // PERBAIKAN: Pastikan customer_id ada di dalam company ini
+            'customer_id' => ['required', Rule::exists('customers', 'id')->where('company_id', $companyId)],
+            // PERBAIKAN: Jika vehicle_id ada, pastikan juga ada di dalam company ini
+            'vehicle_id' => ['nullable', Rule::exists('vehicles', 'id')->where('company_id', $companyId)],
             'payment_method' => ['required', 'string'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.id' => ['required'],
@@ -57,13 +61,14 @@ class SaleController extends Controller
 
             // 3. Buat record utama di tabel 'sales'
             $sale = Sale::create([
-                'invoice_number' => $request->invoice_number ?? 'INV-' . time(), // Buat nomor invoice unik
+                'invoice_number' => $request->invoice_number ?? 'INV-' . time(),
                 'customer_id' => $request->customer_id,
-                'vehicle_id' => $request->vehicle_id, // Bisa null
+                'vehicle_id' => $request->vehicle_id,
                 'user_id' => Auth::id(),
                 'total_amount' => $totalAmount,
                 'payment_method' => $request->payment_method,
                 'status' => 'lunas',
+                'company_id' => $companyId, // <-- PENTING
             ]);
 
             // 4. Loop dan simpan detail, lalu kurangi stok
@@ -123,10 +128,28 @@ class SaleController extends Controller
     public function searchCustomers(Request $request)
     {
         $term = $request->input('term');
+        
         $customers = Customer::with('vehicles')
-                            ->where('name', 'LIKE', "%{$term}%")
-                            ->orWhere('phone_number', 'LIKE', "%{$term}%")
-                            ->limit(10)->get();
+            ->where('name', 'LIKE', "%{$term}%")
+            ->orWhere('phone_number', 'LIKE', "%{$term}%")
+            ->limit(10)
+            ->get();
+            
+        // Logika untuk menambahkan opsi "Tambah Baru"
+        // Opsi ini hanya muncul jika tidak ada hasil yang sama persis
+        $exactMatch = $customers->first(function ($customer) use ($term) {
+            return strtolower($customer->name) === strtolower($term);
+        });
+
+        if (!$exactMatch && !empty($term)) {
+            $customers->prepend((object)[
+                'id' => 'new:' . $term, // Kirim ID khusus untuk menandakan user baru
+                'name' => '➕ Tambah Pelanggan Baru: "' . $term . '"',
+                'phone_number' => null,
+                'vehicles' => [],
+            ]);
+        }
+        
         return response()->json($customers);
     }
 

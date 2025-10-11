@@ -34,6 +34,8 @@ class SupplierController extends Controller
     public function store(Request $request)
     {
         $validated = $this->validateSupplier($request);
+        // PERBAIKAN: Tambahkan company_id
+        $validated['company_id'] = auth()->user()->company_id;
         Supplier::create($validated);
         return response()->json(['success' => 'Supplier created successfully.']);
     }
@@ -59,8 +61,10 @@ class SupplierController extends Controller
 
     private function validateSupplier(Request $request, $supplierId = null)
     {
+        $companyId = auth()->user()->company_id;
         $rules = [
-            'name' => ['required', 'string', 'max:255'],
+            // PERBAIKAN: Nama supplier unik per company
+            'name' => ['required', 'string', 'max:255', Rule::unique('suppliers')->where('company_id', $companyId)->ignore($supplierId)],
             'phone_number' => ['required', 'string', 'max:20'],
             'address' => ['nullable', 'string'],
             'contact_person' => ['nullable', 'string', 'max:255'],

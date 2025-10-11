@@ -20,6 +20,7 @@
         @vite(['resources/css/app.css'])
         <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdn.datatables.net/2.0.8/css/dataTables.tailwindcss.min.css">
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
     </head>
     <body class="font-sans antialiased bg-gray-50 dark:bg-gray-900">
@@ -32,6 +33,14 @@
         <div id="main-content" class="p-4 sm:ml-64 transition-all duration-300">
             {{-- mt-14 memberi jarak dari topnav yang fixed --}}
             <main class="mt-14">
+                @auth
+                    @if(auth()->user()->company && auth()->user()->company->trial_ends_at?->isFuture())
+                        <div class="p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300" role="alert">
+                            Masa uji coba Anda akan berakhir dalam **{{ now()->diffInDays(auth()->user()->company->trial_ends_at) + 1 }} hari**. 
+                            <a href="{{ route('billing.index') }}" class="font-semibold underline hover:text-yellow-900">Langganan Sekarang</a>.
+                        </div>
+                    @endif
+                @endauth
                 {{-- Konten Dinamis dari setiap halaman --}}
                 <div class="p-4 bg-white rounded-lg shadow-sm">
                     <header class="px-4 py-3 bg-white rounded-lg shadow-sm mb-4 border-b border-gray-200 dark:border-gray-700">
@@ -47,6 +56,7 @@
         @include('layouts.partials.footer')
         
         <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
         <script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
         <script src="https://cdn.datatables.net/2.0.8/js/dataTables.tailwindcss.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>

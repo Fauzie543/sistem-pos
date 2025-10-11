@@ -40,6 +40,7 @@ class ServiceController extends Controller
     public function store(Request $request)
     {
         $validated = $this->validateService($request);
+        $validated['company_id'] = auth()->user()->company_id;
         Service::create($validated);
         return response()->json(['success' => 'Service created successfully.']);
     }
@@ -66,9 +67,12 @@ class ServiceController extends Controller
     // Helper validasi
     private function validateService(Request $request, $serviceId = null)
     {
+        $companyId = auth()->user()->company_id;
         $rules = [
-            'name' => ['required', 'string', 'max:255', Rule::unique('services')->ignore($serviceId)],
-            'category_id' => ['required', 'exists:categories,id'],
+            // PERBAIKAN: unik hanya di dalam company ini
+            'name' => ['required', 'string', 'max:255', Rule::unique('services')->where('company_id', $companyId)->ignore($serviceId)],
+            // PERBAIKAN: kategori harus ada di dalam company ini
+            'category_id' => ['required', Rule::exists('categories', 'id')->where('company_id', $companyId)],
             'price' => ['required', 'numeric', 'min:0'],
         ];
 

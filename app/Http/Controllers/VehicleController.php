@@ -35,8 +35,11 @@ class VehicleController extends Controller
     public function store(Request $request)
     {
         $validated = $this->validateVehicle($request);
-        Vehicle::create($validated);
-        return response()->json(['success' => 'Vehicle created successfully.']);
+        // PERBAIKAN: Tambahkan company_id
+        $validated['company_id'] = auth()->user()->company_id;
+        $vehicle = Vehicle::create($validated);
+        // Mengembalikan data lengkap agar bisa digunakan di AJAX
+        return response()->json($vehicle);
     }
 
     public function edit(Vehicle $vehicle)
@@ -60,12 +63,16 @@ class VehicleController extends Controller
 
     private function validateVehicle(Request $request, $vehicleId = null)
     {
+        $companyId = auth()->user()->company_id;
         return $request->validate([
-            'customer_id' => ['required', 'exists:customers,id'],
-            'license_plate' => ['required', 'string', 'max:20', Rule::unique('vehicles')->ignore($vehicleId)],
+            // PERBAIKAN: Pastikan customer_id ada di dalam company ini
+            'customer_id' => ['required', Rule::exists('customers', 'id')->where('company_id', $companyId)],
+            // PERBAIKAN: Plat nomor unik per company
+            'license_plate' => ['required', 'string', 'max:20', Rule::unique('vehicles')->where('company_id', $companyId)->ignore($vehicleId)],
             'brand' => ['required', 'string', 'max:50'],
             'model' => ['required', 'string', 'max:50'],
-            'year' => ['required', 'digits:4', 'integer', 'min:1900'],
+            'color' => ['required', 'string', 'max:50'],
+            'year' => ['nullable', 'digits:4', 'integer', 'min:1900'],
         ]);
     }
 }

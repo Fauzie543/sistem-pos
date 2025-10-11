@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Yajra\DataTables\Facades\DataTables;
@@ -47,10 +48,12 @@ class CategoryController extends Controller
      */
     public function store(Request $request)
     {
+        $companyId = auth()->user()->company_id;
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:'.Category::class],
+            'name' => ['required', 'string', 'max:255', Rule::unique('categories')->where('company_id', $companyId)],
             'description' => ['nullable', 'string'],
         ]);
+        $validated['company_id'] = $companyId;
 
         Category::create($validated);
         return response()->json(['success' => 'Category created successfully.']);
@@ -77,8 +80,11 @@ class CategoryController extends Controller
      */
     public function update(Request $request, Category $category)
     {
+        $companyId = auth()->user()->company_id;
+
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', Rule::unique('categories')->ignore($category->id)],
+            // PERBAIKAN: Rule 'unique' sekarang hanya berlaku di dalam company yang sama
+            'name' => ['required', 'string', 'max:255', Rule::unique('categories')->where('company_id', $companyId)->ignore($category->id)],
             'description' => ['nullable', 'string'],
         ]);
 

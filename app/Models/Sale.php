@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Multitenancy\Models\Concerns\UsesTenantConnection;
 
 class Sale extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, UsesTenantConnection;
 
     protected $fillable = [
         'invoice_number',
@@ -22,6 +23,7 @@ class Sale extends Model
         'total_amount',
         'payment_method',
         'status',
+        'company_id'
     ];
 
     public function customer(): BelongsTo

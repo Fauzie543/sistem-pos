@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Multitenancy\Models\Concerns\UsesTenantConnection;
 
 class Purchase extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, UsesTenantConnection;
 
     protected $fillable = [
         'supplier_id',
@@ -19,6 +20,7 @@ class Purchase extends Model
         'purchase_date',
         'total_amount',
         'status',
+        'company_id'
     ];
 
     /**
