@@ -1,6 +1,7 @@
 <aside id="logo-sidebar" class="fixed top-0 left-0 z-40 w-64 h-screen pt-14 transition-all duration-300 bg-white border-r border-gray-200 sm:translate-x-0 dark:bg-gray-800 dark:border-gray-700" aria-label="Sidebar">
 
     <div class="h-full px-3 pb-4 overflow-y-auto bg-white dark:bg-gray-800">
+        {{-- Tombol Toggle diletakkan di sini agar tidak terpengaruh logika role --}}
         <div class="flex justify-end pt-1">
              <button id="sidebar-toggle" class="p-1.5 rounded-md text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400">
                 <svg id="icon-minimize" class="w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -11,10 +12,33 @@
                 </svg>
             </button>
         </div>
+
         <ul class="space-y-2 font-medium">
 
-            @if(Auth::check() && Auth::user()->role_id == 3)
-                {{-- TAMPILAN KASIR --}}
+            {{-- =============================================== --}}
+            {{-- BLOK KHUSUS UNTUK SUPER ADMIN --}}
+            {{-- =============================================== --}}
+            @if(auth()->user()->role->name == 'superadmin')
+                <li>
+                    <a href="{{ route('dashboard') }}" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group {{ request()->routeIs('dashboard') ? 'bg-gray-100 dark:bg-gray-700' : '' }}">
+                        <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 22 21"><path d="M16.975 11H10V4.025a1 1 0 0 0-1.066-.998 8.5 8.5 0 1 0 9.039 9.039.999.999 0 0 0-1-1.066h.002Z"/><path d="M12.5 0c-.157 0-.311.01-.565.027A1 1 0 0 0 11 1.02V10h8.975a1 1 0 0 0 1-.935c.013-.188.028-.374.028-.565A8.51 8.51 0 0 0 12.5 0Z"/></svg>
+                        <span class="sidebar-text ms-3">Dashboard</span>
+                    </a>
+                </li>
+                <li class="pt-2">
+                    <span class="sidebar-text px-2 text-xs font-semibold text-gray-500 uppercase">Super Admin</span>
+                </li>
+                <li>
+                    <a href="{{ route('superadmin.features.index') }}" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group {{ request()->routeIs('superadmin.features.index') ? 'bg-gray-100 dark:bg-gray-700' : '' }}">
+                        <svg class="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        <span class="sidebar-text flex-1 ms-3 whitespace-nowrap">Manajemen Fitur</span>
+                    </a>
+                </li>
+
+            {{-- =============================================== --}}
+            {{-- BLOK KHUSUS UNTUK KASIR --}}
+            {{-- =============================================== --}}
+            @elseif(auth()->user()->role->name == 'kasir')
                 <li class="pt-2">
                     <span class="sidebar-text px-2 text-xs font-semibold text-gray-500 uppercase">Transactions</span>
                 </li>
@@ -24,25 +48,17 @@
                         <span class="sidebar-text flex-1 ms-3 whitespace-nowrap">Kasir</span>
                     </a>
                 </li>
+
+            {{-- =============================================== --}}
+            {{-- BLOK UNTUK SEMUA PERAN KLIEN LAINNYA (ADMIN, GUDANG, DLL) --}}
+            {{-- =============================================== --}}
             @else
-                {{-- TAMPILAN ADMIN / OWNER --}}
                 <li>
                     <a href="{{ route('dashboard') }}" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group {{ request()->routeIs('dashboard') ? 'bg-gray-100 dark:bg-gray-700' : '' }}">
                         <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 22 21"><path d="M16.975 11H10V4.025a1 1 0 0 0-1.066-.998 8.5 8.5 0 1 0 9.039 9.039.999.999 0 0 0-1-1.066h.002Z"/><path d="M12.5 0c-.157 0-.311.01-.565.027A1 1 0 0 0 11 1.02V10h8.975a1 1 0 0 0 1-.935c.013-.188.028-.374.028-.565A8.51 8.51 0 0 0 12.5 0Z"/></svg>
                         <span class="sidebar-text ms-3">Dashboard</span>
                     </a>
                 </li>
-                @if(auth()->user()->role_id == 1)
-                    <li class="pt-2">
-                        <span class="sidebar-text px-2 text-xs font-semibold text-gray-500 uppercase">Super Admin</span>
-                    </li>
-                    <li>
-                        <a href="{{ route('superadmin.features.index') }}" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group {{ request()->routeIs('superadmin.features.index') ? 'bg-gray-100 dark:bg-gray-700' : '' }}">
-                            <svg class="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                            <span class="sidebar-text flex-1 ms-3 whitespace-nowrap">Manajemen Fitur</span>
-                        </a>
-                    </li>
-                @endif
                 <li class="pt-2">
                     <span class="sidebar-text px-2 text-xs font-semibold text-gray-500 uppercase">Data Master</span>
                 </li>
@@ -58,7 +74,7 @@
                        <span class="sidebar-text flex-1 ms-3 whitespace-nowrap">Produk</span>
                     </a>
                 </li>
-                @if(auth()->user()->role->name == 'superadmin' || (auth()->user()->company && auth()->user()->company->featureEnabled('services')))
+                @if(auth()->user()->company && auth()->user()->company->featureEnabled('services'))
                     <li>
                         <a href="{{ route('services.index') }}" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group {{ request()->routeIs('services.*') ? 'bg-gray-100 dark:bg-gray-700' : '' }}">
                             <svg class="w-6 h-6 text-gray-800" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linejoin="round" stroke-width="2" d="M7.58209 8.96025 9.8136 11.1917l-1.61782 1.6178c-1.08305-.1811-2.23623.1454-3.07364.9828-1.1208 1.1208-1.32697 2.8069-.62368 4.1363.14842.2806.42122.474.73509.5213.06726.0101.1347.0133.20136.0098-.00351.0666-.00036.1341.00977.2013.04724.3139.24069.5867.52125.7351 1.32944.7033 3.01552.4971 4.13627-.6237.8375-.8374 1.1639-1.9906.9829-3.0736l4.8107-4.8108c1.0831.1811 2.2363-.1454 3.0737-.9828 1.1208-1.1208 1.3269-2.80688.6237-4.13632-.1485-.28056-.4213-.474-.7351-.52125-.0673-.01012-.1347-.01327-.2014-.00977.0035-.06666.0004-.13409-.0098-.20136-.0472-.31386-.2406-.58666-.5212-.73508-1.3294-.70329-3.0155-.49713-4.1363.62367-.8374.83741-1.1639 1.9906-.9828 3.07365l-1.7788 1.77875-2.23152-2.23148-1.41419 1.41424Zm1.31056-3.1394c-.04235-.32684-.24303-.61183-.53647-.76186l-1.98183-1.0133c-.38619-.19746-.85564-.12345-1.16234.18326l-.86321.8632c-.3067.3067-.38072.77616-.18326 1.16235l1.0133 1.98182c.15004.29345.43503.49412.76187.53647l1.1127.14418c.3076.03985.61628-.06528.8356-.28461l.86321-.8632c.21932-.21932.32446-.52801.2846-.83561l-.14417-1.1127ZM19.4448 16.4052l-3.1186-3.1187c-.7811-.781-2.0474-.781-2.8285 0l-.1719.172c-.7811.781-.7811 2.0474 0 2.8284l3.1186 3.1187c.7811.781 2.0474.781 2.8285 0l.1719-.172c.7811-.781.7811-2.0474 0-2.8284Z"/></svg>
@@ -78,6 +94,7 @@
                         <span class="sidebar-text flex-1 ms-3 whitespace-nowrap">Pelanggan</span>
                     </a>
                 </li>
+                
                 <li class="pt-2">
                     <span class="sidebar-text px-2 text-xs font-semibold text-gray-500 uppercase">Transactions</span>
                 </li>
@@ -87,7 +104,7 @@
                         <span class="sidebar-text flex-1 ms-3 whitespace-nowrap">Kasir</span>
                     </a>
                 </li>
-                @if(auth()->user()->role->name == 'superadmin' || (auth()->user()->company && auth()->user()->company->featureEnabled('purchases')))
+                @if(auth()->user()->company && auth()->user()->company->featureEnabled('purchases'))
                     <li>
                         <a href="{{ route('purchases.index') }}" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group {{ request()->routeIs('purchases.*') ? 'bg-gray-100 dark:bg-gray-700' : '' }}">
                             <svg class="w-6 h-6 text-gray-800" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M4 4a1 1 0 0 1 1-1h1.5a1 1 0 0 1 .979.796L7.939 6H19a1 1 0 0 1 .979 1.204l-1.25 6a1 1 0 0 1-.979.796H9.605l.208 1H17a3 3 0 1 1-2.83 2h-2.34a3 3 0 1 1-4.009-1.76L5.686 5H5a1 1 0 0 1-1-1Z" clip-rule="evenodd"/></svg>
@@ -101,6 +118,7 @@
                         <span class="sidebar-text flex-1 ms-3 whitespace-nowrap">Riwayat Penjualan</span>
                     </a>
                 </li>
+                
                 <li class="pt-2">
                     <span class="sidebar-text px-2 text-xs font-semibold text-gray-500 uppercase">Settings</span>
                 </li>
@@ -126,7 +144,6 @@
                     </a>
                 </li>
             @endif
-            </ul>
-        </div>
+        </ul>
     </div>
 </aside>

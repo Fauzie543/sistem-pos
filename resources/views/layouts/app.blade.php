@@ -36,7 +36,8 @@
                 @auth
                     @if(auth()->user()->company && auth()->user()->company->trial_ends_at?->isFuture())
                         <div class="p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300" role="alert">
-                            Masa uji coba Anda akan berakhir dalam **{{ now()->diffInDays(auth()->user()->company->trial_ends_at) + 1 }} hari**. 
+                            Masa uji coba Anda akan berakhir dalam 
+                            <strong>{{ floor(now()->diffInDays(auth()->user()->company->trial_ends_at, false)) + 1 }} hari</strong>. 
                             <a href="{{ route('billing.index') }}" class="font-semibold underline hover:text-yellow-900">Langganan Sekarang</a>.
                         </div>
                     @endif

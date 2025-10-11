@@ -16,6 +16,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\Settings\PaymentGatewayController;
 use App\Http\Controllers\SuperAdmin\FeatureManagementController;
+use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -23,15 +24,24 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
+    Route::get('/dashboard', function () {
+        if (auth()->user()->role->name === 'superadmin') {
+            // Jika superadmin, panggil controller SuperAdmin
+            return app(SuperAdminDashboardController::class)->index();
+        }
+        // Jika bukan, panggil controller klien seperti biasa
+        return app(DashboardController::class)->index();
+    })->name('dashboard');
+
     Route::middleware('role:superadmin')->prefix('superadmin')->name('superadmin.')->group(function () {
         Route::get('features', [FeatureManagementController::class, 'index'])->name('features.index');
         Route::post('features', [FeatureManagementController::class, 'update'])->name('features.update');
     });
 
     Route::get('/billing', [BillingController::class, 'index'])->name('billing.index');
+    Route::post('/subscribe', [BillingController::class, 'processSubscription'])->name('subscribe.checkout');
     
     Route::middleware('subscribed')->group(function() {
-        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
         Route::get('/company', [CompanyController::class, 'index'])->name('company.index');
         Route::post('/company', [CompanyController::class, 'store'])->name('company.store');
