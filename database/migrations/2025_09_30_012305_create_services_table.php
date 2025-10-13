@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('category_id')->constrained('categories');
             $table->string('name')->unique();
             $table->unsignedBigInteger('price');
+            $table->foreignId('company_id')->constrained('companies')->onDelete('cascade');
             $table->softDeletes();
             $table->timestamps();
         });

@@ -30,6 +30,7 @@ class Company extends Tenant
     protected $casts = [
         'features' => 'array',
         'trial_ends_at' => 'datetime',
+        'subscription_ends_at' => 'datetime',
         'payment_gateway_keys' => 'encrypted:array',
         'payment_gateway_is_production' => 'boolean',
     ];
@@ -51,5 +52,9 @@ class Company extends Tenant
     public static function findByTenantKey(mixed $key): ?Tenant
     {
         return static::find($key);
+    }
+    public function plan()
+    {
+        return $this->belongsTo(Plan::class);
     }
 }

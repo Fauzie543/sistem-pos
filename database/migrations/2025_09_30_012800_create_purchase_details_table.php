@@ -18,6 +18,7 @@ return new class extends Migration
             $table->integer('quantity');
             $table->unsignedBigInteger('price');
             $table->unsignedBigInteger('subtotal');
+            $table->foreignId('company_id')->constrained('companies')->onDelete('cascade');
             $table->softDeletes();
             $table->timestamps();
         });

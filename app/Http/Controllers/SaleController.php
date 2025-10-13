@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
+use App\Models\Category;
 use App\Models\Product;
 use App\Models\Service;
 use App\Models\Sale;
@@ -20,7 +21,23 @@ class SaleController extends Controller
 {
     public function index()
     {
-        return view('sales.pos');
+        // Ambil semua kategori yang memiliki produk atau jasa
+        $categories = Category::where(function ($query) {
+            $query->whereHas('products')->orWhereHas('services');
+        })->orderBy('name')->get();
+
+        // Ambil semua produk dan jasa untuk ditampilkan di awal
+        $products = Product::where('stock', '>', 0)->orderBy('name')->get();
+        $services = Service::orderBy('name')->get();
+
+        // Gabungkan produk dan jasa ke dalam satu koleksi
+        $items = $products->map(function ($p) {
+            return (object) ['id' => $p->id, 'name' => $p->name, 'price' => $p->selling_price, 'type' => 'product', 'category_id' => $p->category_id];
+        })->concat($services->map(function ($s) {
+            return (object) ['id' => $s->id, 'name' => $s->name, 'price' => $s->price, 'type' => 'service', 'category_id' => $s->category_id];
+        }));
+
+        return view('sales.pos', compact('categories', 'items'));
     }
 
     // === PROSES PENYIMPANAN TRANSAKSI PENJUALAN ===
@@ -79,6 +96,7 @@ class SaleController extends Controller
                     'quantity' => $item['quantity'],
                     'price' => $item['price'],
                     'subtotal' => $item['quantity'] * $item['price'],
+                    'company_id' => $companyId,
                 ]);
 
                 // 5. Kurangi stok HANYA jika item adalah produk
@@ -134,22 +152,8 @@ class SaleController extends Controller
             ->orWhere('phone_number', 'LIKE', "%{$term}%")
             ->limit(10)
             ->get();
-            
-        // Logika untuk menambahkan opsi "Tambah Baru"
-        // Opsi ini hanya muncul jika tidak ada hasil yang sama persis
-        $exactMatch = $customers->first(function ($customer) use ($term) {
-            return strtolower($customer->name) === strtolower($term);
-        });
-
-        if (!$exactMatch && !empty($term)) {
-            $customers->prepend((object)[
-                'id' => 'new:' . $term, // Kirim ID khusus untuk menandakan user baru
-                'name' => '➕ Tambah Pelanggan Baru: "' . $term . '"',
-                'phone_number' => null,
-                'vehicles' => [],
-            ]);
-        }
         
+        // Langsung kembalikan hasil pencarian dari database
         return response()->json($customers);
     }
 

@@ -14,8 +14,9 @@ return new class extends Migration
         Schema::create('customers', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('phone_number')->unique();
+            $table->string('phone_number')->unique()->nullable();
             $table->text('address')->nullable();
+            $table->foreignId('company_id')->constrained('companies')->onDelete('cascade');
             $table->softDeletes();
             $table->timestamps();
         });

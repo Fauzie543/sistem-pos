@@ -21,6 +21,7 @@
         <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdn.datatables.net/2.0.8/css/dataTables.tailwindcss.min.css">
         <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+        <script type="text/javascript" src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ config('services.midtrans.client_key') }}"></script>
 
     </head>
     <body class="font-sans antialiased bg-gray-50 dark:bg-gray-900">
@@ -34,11 +35,14 @@
             {{-- mt-14 memberi jarak dari topnav yang fixed --}}
             <main class="mt-14">
                 @auth
-                    @if(auth()->user()->company && auth()->user()->company->trial_ends_at?->isFuture())
-                        <div class="p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300" role="alert">
-                            Masa uji coba Anda akan berakhir dalam 
-                            <strong>{{ floor(now()->diffInDays(auth()->user()->company->trial_ends_at, false)) + 1 }} hari</strong>. 
-                            <a href="{{ route('billing.index') }}" class="font-semibold underline hover:text-yellow-900">Langganan Sekarang</a>.
+                    @php $company = auth()->user()->company; @endphp
+                    
+                    {{-- Tampilkan notifikasi ini HANYA jika user tidak berlangganan DAN masih dalam masa trial --}}
+                    @if($company && !$company->subscription_ends_at && $company->trial_ends_at?->isFuture())
+                        <div class="p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50 ..." role="alert">
+                            Masa uji coba Anda akan berakhir dalam
+                            <strong>{{ floor(now()->diffInDays(auth()->user()->company->trial_ends_at, false)) + 1 }} hari</strong>.
+                            <a href="{{ route('billing.index') }}" class="font-semibold underline ...">Langganan Sekarang</a>.
                         </div>
                     @endif
                 @endauth

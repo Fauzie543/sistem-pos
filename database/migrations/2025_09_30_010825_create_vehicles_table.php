@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('brand');
             $table->string('model');
             $table->string('year', 4);
+            $table->foreignId('company_id')->constrained('companies')->onDelete('cascade');
             $table->softDeletes();
             $table->timestamps();
         });

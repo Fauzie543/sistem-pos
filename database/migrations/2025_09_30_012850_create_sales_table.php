@@ -15,12 +15,13 @@ return new class extends Migration
             $table->id();
             $table->string('invoice_number')->unique();
             $table->foreignId('customer_id')->constrained('customers');
-            $table->foreignId('vehicle_id')->constrained('vehicles');
+            $table->foreignId('vehicle_id')->nullable()->constrained('vehicles');
             $table->foreignId('mechanic_id')->nullable()->constrained('users'); // Mekanik yg mengerjakan
             $table->foreignId('user_id')->constrained('users'); // Kasir yg melayani
             $table->unsignedBigInteger('total_amount');
             $table->string('payment_method');
             $table->enum('status', ['lunas', 'belum bayar'])->default('lunas');
+            $table->foreignId('company_id')->constrained('companies')->onDelete('cascade');
             $table->softDeletes();
             $table->timestamps();
         });

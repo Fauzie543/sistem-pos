@@ -17,8 +17,9 @@ return new class extends Migration
             $table->foreignId('product_id')->nullable()->constrained('products');
             $table->foreignId('service_id')->nullable()->constrained('services');
             $table->integer('quantity');
-            $table->unsignedBigInteger('price');
-            $table->unsignedBigInteger('subtotal');
+            $table->decimal('price', 15, 2);
+            $table->decimal('subtotal', 15, 2);
+            $table->foreignId('company_id')->constrained('companies')->onDelete('cascade');
             $table->softDeletes();
             $table->timestamps();
         });

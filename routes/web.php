@@ -23,6 +23,8 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
+Route::post('/midtrans/notification', [BillingController::class, 'handleNotification'])->name('midtrans.notification');
+
 Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/dashboard', function () {

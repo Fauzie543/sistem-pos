@@ -28,6 +28,9 @@
     @foreach($sale->details as $detail)
     <div>
         <p>{{ $detail->product->name ?? $detail->service->name }}</p>
+         @if(!empty($detail->note))
+            <p style="font-style: italic; font-size: 11px; margin-top: -2px;">{{ $detail->note }}</p>
+        @endif
         <div class="item">
             <span>{{ $detail->quantity }} x {{ number_format($detail->price, 0, ',', '.') }}</span>
             <span>{{ number_format($detail->subtotal, 0, ',', '.') }}</span>

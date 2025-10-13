@@ -22,6 +22,7 @@ return new class extends Migration
             $table->integer('stock')->default(0);
             $table->string('unit')->comment('e.g., pcs, liter, set');
             $table->string('storage_location')->nullable();
+            $table->foreignId('company_id')->constrained('companies')->onDelete('cascade');
             $table->softDeletes();
             $table->timestamps();
         });

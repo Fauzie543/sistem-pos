@@ -11,6 +11,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->validateCsrfTokens(except: [
+            '/midtrans/notification' // URI yang dikecualikan dari CSRF
+        ]);
         $middleware->alias([
             'feature' => \App\Http\Middleware\CheckFeatureIsEnabled::class,
             'role' => \App\Http\Middleware\RoleMiddleware::class,

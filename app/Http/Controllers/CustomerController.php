@@ -37,8 +37,12 @@ class CustomerController extends Controller
     {
         $validated = $this->validateCustomer($request);
         $validated['company_id'] = auth()->user()->company_id;
-        Customer::create($validated);
-        return response()->json(['success' => 'Customer created successfully.']);
+        
+        // Tangkap customer yang baru dibuat ke dalam variabel
+        $customer = Customer::create($validated);
+        
+        // Kirim kembali object customer sebagai response JSON
+        return response()->json($customer);
     }
 
     public function edit(Customer $customer)
@@ -68,8 +72,7 @@ class CustomerController extends Controller
 
         return $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            // PERBAIKAN: Pastikan phone_number unik hanya di dalam company yang sama
-            'phone_number' => ['required', 'string', 'max:20', Rule::unique('customers')->where('company_id', $companyId)->ignore($customerId)],
+            'phone_number' => ['nullable', 'string', 'max:20', Rule::unique('customers')->where('company_id', $companyId)->ignore($customerId)],
             'address' => ['nullable', 'string'],
         ]);
     }

@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('contact_person')->nullable();
             $table->string('phone_number');
             $table->text('address')->nullable();
+            $table->foreignId('company_id')->constrained('companies')->onDelete('cascade');
             $table->softDeletes();
             $table->timestamps();
         });

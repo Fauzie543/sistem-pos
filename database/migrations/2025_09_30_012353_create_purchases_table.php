@@ -19,6 +19,7 @@ return new class extends Migration
             $table->date('purchase_date');
             $table->unsignedBigInteger('total_amount');
             $table->enum('status', ['diterima', 'dipesan'])->default('diterima');
+            $table->foreignId('company_id')->constrained('companies')->onDelete('cascade');
             $table->softDeletes();
             $table->timestamps();
         });

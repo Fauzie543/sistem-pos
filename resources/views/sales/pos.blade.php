@@ -1,80 +1,113 @@
 @extends('layouts.app')
 @section('title', 'Kasir')
+@section('header', 'Point of Sale')
 
-@section('header', 'Kasir')
+@push('styles')
+<style>
+    /* Styling agar scrollbar lebih tipis dan modern */
+    #item-list::-webkit-scrollbar, #cart::-webkit-scrollbar { width: 6px; }
+    #item-list::-webkit-scrollbar-track, #cart::-webkit-scrollbar-track { background: #f1f1f1; }
+    #item-list::-webkit-scrollbar-thumb, #cart::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
+    #item-list::-webkit-scrollbar-thumb:hover, #cart::-webkit-scrollbar-thumb:hover { background: #555; }
+    
+    /* Custom style untuk Select2 agar sesuai dengan tema Tailwind */
+    .select2-container .select2-selection--single { height: 2.5rem !important; border-color: #d1d5db !important; }
+    .select2-container--default .select2-selection--single .select2-selection__rendered { line-height: 2.5rem !important; }
+    .select2-container--default .select2-selection--single .select2-selection__arrow { height: 2.5rem !important; }
+</style>
+@endpush
 
 @section('content')
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-12rem)]">
     
-    {{-- Kolom Kiri: Info Pelanggan & Pencarian Item --}}
-    <div class="lg:col-span-2 bg-white p-6 rounded-md shadow-sm">
-        {{-- Customer --}}
-        <div>
-            <label for="customer_search" class="block text-sm font-medium text-gray-700">Cari atau Tambah Pelanggan Baru</label>
-            <select id="customer_search" class="mt-1 block w-full"></select>
-            
-            {{-- Detail pelanggan dan kendaraan --}}
-            <div id="customer_details" class="mt-4 p-4 border rounded-md bg-gray-50 hidden">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <h3 class="font-semibold" id="customer_name"></h3>
-                        <p class="text-sm text-gray-600" id="customer_phone"></p>
-                    </div>
-                    {{-- TOMBOL TAMBAH KENDARAAN BARU --}}
-                    <button id="addVehicleBtn" class="bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold py-1 px-2 rounded">
-                        + Kendaraan
-                    </button>
-                </div>
-                <select name="vehicle_id" id="vehicle_id" class="mt-2 text-sm block w-full border-gray-300 rounded-md shadow-sm"></select>
+    {{-- KOLOM KIRI: DAFTAR PRODUK & JASA --}}
+    {{-- TAMBAHKAN min-h-0 DI SINI --}}
+    <div class="lg:col-span-2 bg-white rounded-md shadow-sm flex flex-col min-h-0">
+        {{-- Header: Filter & Pencarian --}}
+        <div class="p-4 border-b">
+            <div class="flex flex-col md:flex-row gap-4">
+                <input type="text" id="item_search_input" class="w-full md:w-1/3 border-gray-300 rounded-md shadow-sm" placeholder="Cari item...">
+                <select id="category_filter" class="w-full md:w-1/3 border-gray-300 rounded-md shadow-sm">
+                    <option value="all">Semua Kategori</option>
+                    @foreach($categories as $category)
+                        <option value="{{ $category->id }}">{{ $category->name }}</option>
+                    @endforeach
+                </select>
             </div>
         </div>
 
-        {{-- Item --}}
-        <div class="mt-6 relative"> {{-- TAMBAHKAN CLASS 'relative' DI SINI --}}
-            <label for="item_search" class="block text-sm font-medium text-gray-700">Search Product [P] or Service [J]</label>
-            <input type="text" id="item_search" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" placeholder="Start typing...">
-            {{-- Lebar 'w-full' akan mengikuti parent yang 'relative' --}}
-            <div id="item_search_results" class="absolute z-10 w-full bg-white border rounded-md shadow-lg hidden"></div>
+        {{-- Grid Daftar Item --}}
+        <div id="item-list" class="flex-grow p-4 overflow-y-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            @forelse($items as $item)
+                <div class="item-card cursor-pointer border rounded-lg p-3 flex flex-col h-24 hover:border-blue-500 hover:shadow-lg transition-all" 
+                     data-item-id="{{ $item->type }}-{{ $item->id }}" 
+                     data-category-id="{{ $item->category_id }}"
+                     data-name="{{ strtolower($item->name) }}">
+                    <div>
+                        <p class="font-semibold text-sm truncate">{{ $item->name }}</p>
+                        <span class="text-xs {{ $item->type == 'product' ? 'text-green-600' : 'text-purple-600' }}">{{ $item->type == 'product' ? 'Produk' : 'Jasa' }}</span>
+                    </div>
+                    <p class="text-right font-bold text-gray-800 mt-2">Rp {{ number_format($item->price, 0, ',', '.') }}</p>
+                </div>
+            @empty
+                <div class="col-span-full text-center text-gray-500 py-10">
+                    <p>Tidak ada produk atau jasa yang ditemukan.</p>
+                    <p class="text-sm">Silakan tambahkan data di menu Produk atau Jasa terlebih dahulu.</p>
+                </div>
+            @endforelse
         </div>
     </div>
 
-    {{-- Kolom Kanan: Keranjang & Pembayaran --}}
-    <div class="bg-white p-6 rounded-md shadow-sm">
-        <h2 class="text-xl font-bold border-b pb-2">Order Details</h2>
-        <div id="cart" class="my-4 space-y-2">
-            <p class="text-gray-500 text-center">Cart is empty.</p>
+    {{-- KOLOM KANAN: KERANJANG & PEMBAYARAN --}}
+    {{-- TAMBAHKAN min-h-0 DI SINI --}}
+    <div class="bg-white rounded-md shadow-sm flex flex-col min-h-0">
+        {{-- Info Pelanggan --}}
+        <div class="p-4 border-b">
+            <label for="customer_search" class="block text-sm font-medium text-gray-700">Pelanggan</label>
+            <select id="customer_search" class="mt-1 block w-full"></select>
+            @if(auth()->user()->company && auth()->user()->company->featureEnabled('services'))
+                <div id="vehicle_section" class="mt-2 hidden">
+                    <div class="flex justify-between items-center">
+                        <label for="vehicle_id" class="block text-sm font-medium text-gray-700">Kendaraan</label>
+                        <button id="addVehicleBtn" class="text-blue-600 hover:underline text-xs font-bold">+ Tambah</button>
+                    </div>
+                    <select name="vehicle_id" id="vehicle_id" class="mt-1 text-sm block w-full border-gray-300 rounded-md shadow-sm"></select>
+                </div>
+            @endif
         </div>
-        
-        <div class="border-t pt-4 space-y-4"> {{-- Ubah space-y-2 menjadi space-y-4 --}}
-            <div class="flex justify-between font-semibold text-lg"> {{-- Buat font lebih besar --}}
+
+        {{-- Keranjang Belanja --}}
+        <div class="flex-grow p-4 overflow-y-auto" id="cart">
+            <p class="text-gray-500 text-center">Keranjang kosong.</p>
+        </div>
+
+        {{-- Ringkasan & Pembayaran --}}
+        <div class="p-4 border-t space-y-4">
+            <div class="flex justify-between font-semibold text-lg">
                 <span>Grand Total</span>
                 <span id="grand_total">Rp 0</span>
             </div>
             
-            <div>
-                <label for="payment_method" class="block text-sm font-medium text-gray-700">Payment Method</label>
-                <select id="payment_method" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                    <option value="cash" selected>Cash</option>
-                    <option value="qris">QRIS</option>
-                </select>
-            </div>
-
-            {{-- BAGIAN BARU UNTUK PEMBAYARAN TUNAI --}}
-            <div id="cash_payment_details" class="space-y-4">
+            <div id="cash_payment_details" class="space-y-2" style="display: none;">
                 <div>
-                    <label for="amount_paid" class="block text-sm font-medium text-gray-700">Amount Paid (Rp)</label>
-                    <input type="number" id="amount_paid" placeholder="Enter cash amount" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-lg text-right">
+                    <label for="amount_paid" class="block text-sm font-medium text-gray-700">Uang Tunai (Rp)</label>
+                    <input type="number" id="amount_paid" placeholder="Masukkan jumlah uang" class="mt-1 block w-full text-right border-gray-300 rounded-md shadow-sm">
                 </div>
-                <div class="flex justify-between font-semibold text-lg">
-                    <span>Change Due</span>
+                <div class="flex justify-between font-medium text-base">
+                    <span>Kembalian</span>
                     <span id="change_due">Rp 0</span>
                 </div>
             </div>
-            {{-- AKHIR BAGIAN BARU --}}
-
-            <button id="process_sale" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded mt-4">
-                Process Sale
-            </button>
+            
+            <div class="grid grid-cols-2 gap-2">
+                 <select id="payment_method" class="w-full border-gray-300 rounded-md shadow-sm">
+                    <option value="cash" selected>Cash</option>
+                    <option value="qris">QRIS</option>
+                </select>
+                <button id="process_sale" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded">
+                    Bayar
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -86,22 +119,20 @@
             <h3 class="text-xl font-semibold">Scan QRIS to Pay</h3>
             <button id="closeQrisModal" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
         </div>
-        
-        {{-- Tempat untuk menampilkan QR Code --}}
         <div id="qris-container" class="my-4">
-            {{-- Spinner loading --}}
             <div id="qris-spinner" class="flex justify-center items-center h-48">
                 <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-gray-900"></div>
             </div>
-            {{-- Gambar QR Code --}}
             <img id="qris-image" src="" alt="QRIS Code" class="mx-auto hidden">
         </div>
-
         <p class="font-bold text-2xl" id="qris-amount"></p>
         <p class="text-sm text-gray-500" id="qris-expiry"></p>
     </div>
 </div>
+
 <iframe id="receipt-iframe" style="display:none;"></iframe>
+
+
 
 @endsection
 
@@ -112,81 +143,206 @@ $(function() {
     let customer = null;
     let vehicle_id = null;
     let cart = [];
-    let grandTotalValue = 0;
-    let currentQrisOrderId = null; // <-- TAMBAHKAN INI
+    const allItems = @json($items);
     let qrisPollingInterval = null;
-    let isQrisPaid = false;
 
-    // CUSTOMER SEARCH
-     $('#customer_search').select2({
-        placeholder: 'Ketik nama atau no. telepon pelanggan...',
+    // ===================================================
+    // LOGIKA TAMPILAN BARU
+    // ===================================================
+
+    $('.item-card').on('click', function() {
+        const itemId = $(this).data('item-id');
+        const [type, id] = itemId.split('-');
+        const itemData = allItems.find(item => item.id == id && item.type == type);
+        if (itemData) {
+            addItemToCart(itemData);
+        }
+    });
+
+    $('#category_filter').on('change', () => filterItems());
+    $('#item_search_input').on('keyup', () => filterItems());
+
+    function filterItems() {
+        const categoryId = $('#category_filter').val();
+        const searchTerm = $('#item_search_input').val().toLowerCase();
+
+        $('.item-card').each(function() {
+            const card = $(this);
+            const cardCategoryId = card.data('category-id').toString();
+            const cardName = card.data('name');
+            const categoryMatch = (categoryId === 'all' || cardCategoryId === categoryId);
+            const searchMatch = (searchTerm === '' || cardName.includes(searchTerm));
+            
+            if (categoryMatch && searchMatch) card.show();
+            else card.hide();
+        });
+    }
+
+    // ===================================================
+    // FUNGSI KERANJANG (CART)
+    // ===================================================
+    function addItemToCart(item) {
+        const existingItem = cart.find(cartItem => cartItem.id === item.id && cartItem.type === item.type);
+        if (existingItem) {
+            existingItem.quantity++;
+        } else {
+            cart.push({ ...item, quantity: 1 });
+        }
+        renderCart();
+    }
+
+    function renderCart() {
+        if (cart.length === 0) {
+            $('#cart').html('<p class="text-gray-500 text-center">Keranjang kosong.</p>');
+            updateTotals();
+            return;
+        }
+
+        $('#cart').html('');
+        cart.forEach((item, index) => {
+            const subtotal = item.quantity * item.price;
+            $('#cart').append(`
+                <div class="py-2 border-b">
+                    <div class="flex justify-between items-start">
+                        <p class="font-semibold text-sm pr-2">${item.name}</p>
+                        <p class="font-semibold text-sm whitespace-nowrap">Rp ${subtotal.toLocaleString('id-ID')}</p>
+                    </div>
+                    <div class="flex justify-between items-center mt-1">
+                        <p class="text-xs text-gray-600">@ Rp ${item.price.toLocaleString('id-ID')}</p>
+                        <div class="flex items-center gap-2">
+                            <button class="qty-change text-lg font-bold px-1" data-index="${index}" data-amount="-1">-</button>
+                            <input type="number" value="${item.quantity}" class="quantity-input w-12 text-center border-gray-300 rounded-md text-sm" data-index="${index}">
+                            <button class="qty-change text-lg font-bold px-1" data-index="${index}" data-amount="1">+</button>
+                            <button class="remove-item text-red-500 text-xl font-bold" data-index="${index}">&times;</button>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <input type="text" 
+                            class="item-note w-full border-gray-300 rounded-md text-xs p-1" 
+                            placeholder="Tambahkan keterangan..." 
+                            data-index="${index}"
+                            value="${item.note || ''}">
+                    </div>
+                </div>
+            `);
+        });
+        updateTotals();
+    }
+
+    function updateTotals() {
+        let grandTotal = cart.reduce((total, item) => total + (item.quantity * item.price), 0);
+        $('#grand_total').text('Rp ' + grandTotal.toLocaleString('id-ID'));
+        calculateChange();
+    }
+    
+    $('#cart').on('click', '.qty-change', function() {
+        const index = $(this).data('index');
+        const amount = $(this).data('amount');
+        cart[index].quantity += amount;
+        if (cart[index].quantity < 1) cart[index].quantity = 1;
+        renderCart();
+    });
+
+    $('#cart').on('input', '.quantity-input', function() {
+        const index = $(this).data('index');
+        let newQty = parseInt($(this).val());
+        if (isNaN(newQty) || newQty < 1) newQty = 1;
+        cart[index].quantity = newQty;
+        updateTotals(); // Lebih efisien daripada renderCart() penuh
+    });
+    
+    $('#cart').on('click', '.remove-item', function() {
+        const index = $(this).data('index');
+        cart.splice(index, 1);
+        renderCart();
+    });
+
+    $('#cart').on('input', '.item-note', function() {
+        const index = $(this).data('index');
+        cart[index].note = $(this).val();
+    });
+    
+    // ===================================================
+    // FUNGSI PELANGGAN & KENDARAAN
+    // ===================================================
+    $('#customer_search').select2({
+        placeholder: 'Pilih pelanggan atau ketik untuk mencari...',
         minimumInputLength: 3,
         ajax: {
             url: '{{ route("pos.customers.search") }}',
             dataType: 'json',
             delay: 250,
-            processResults: function (data) {
-                return {
-                    results: $.map(data, function (item) {
-                        return {
-                            text: item.name + (item.phone_number ? ` (${item.phone_number})` : ''),
-                            id: item.id,
-                            'data-customer': item 
-                        }
-                    })
-                };
-            },
-            cache: true
+            processResults: (data) => ({
+                results: $.map(data, (item) => ({
+                    text: item.name + (item.phone_number ? ` (${item.phone_number})` : ''),
+                    id: item.id,
+                    'data-customer': item 
+                }))
+            }),
+        },
+        tags: true, // Izinkan inputan bebas
+        createTag: function (params) {
+            var term = $.trim(params.term);
+            if (term === '') return null;
+            return {
+                id: 'new:' + term,
+                text: `➕ Tambah Pelanggan Baru: "${term}"`,
+            };
         }
     });
 
     $('#customer_search').on('select2:select', function (e) {
-        var customerData = e.params.data['data-customer'];
-        
+        var customerData = e.params.data['data-customer'] || { id: e.params.data.id };
+
         if (String(customerData.id).startsWith('new:')) {
             const newName = String(customerData.id).split(':')[1];
             
             Swal.fire({
                 title: 'Tambah Pelanggan Baru',
-                html: `
-                    <input id="swal-name" class="swal2-input" value="${newName}" placeholder="Nama Pelanggan">
-                    <input id="swal-phone" class="swal2-input" placeholder="Nomor Telepon (Opsional)">
-                `,
-                confirmButtonText: 'Lanjut Tambah Kendaraan',
+                html: `<input id="swal-name" class="swal2-input" value="${newName}" placeholder="Nama Pelanggan"><input id="swal-phone" class="swal2-input" placeholder="Nomor Telepon (Opsional)">`,
+                confirmButtonText: 'Simpan',
                 showCancelButton: true,
-                focusConfirm: false,
+                cancelButtonText: 'Batal',
+                showCancelButton: true,
+                buttonsStyling: false,
+                customClass: {
+                    confirmButton: 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded',
+                    cancelButton: 'bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded ml-2'
+                },
                 preConfirm: () => {
                     const name = $('#swal-name').val();
-                    const phone = $('#swal-phone').val();
-                    if (!name) {
-                        Swal.showValidationMessage(`Nama tidak boleh kosong`);
-                    }
-                    return { name: name, phone_number: phone };
+                    if (!name) Swal.showValidationMessage(`Nama tidak boleh kosong`);
+                    return { name: name, phone_number: $('#swal-phone').val() };
                 }
             }).then((result) => {
                 if (result.isConfirmed) {
                     $.post('{{ route('customers.store') }}', {
                         _token: '{{ csrf_token() }}',
-                        name: result.value.name,
-                        phone_number: result.value.phone_number
+                        ...result.value
                     }, function(newCustomer) {
-                        // PERBAIKAN: Pastikan object newCustomer lengkap
-                        newCustomer.vehicles = []; // Pelanggan baru belum punya kendaraan
+                        newCustomer.vehicles = [];
                         setCustomer(newCustomer);
-                        
-                        // Tambahkan customer baru ke Select2 dan pilih
                         var option = new Option(newCustomer.name + (newCustomer.phone_number ? ` (${newCustomer.phone_number})` : ''), newCustomer.id, true, true);
                         $('#customer_search').append(option).trigger('change');
                         
-                        // Langsung buka modal tambah kendaraan untuk customer baru
-                        showAddVehicleModal();
-
-                    }).fail(function() {
-                        Swal.fire('Error!', 'Gagal menyimpan pelanggan baru.', 'error');
-                    });
+                        @if(auth()->user()->company && auth()->user()->company->featureEnabled('services'))
+                            showAddVehicleModal();
+                        @endif
+                    })
+                    .fail(() => {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Gagal menyimpan pelanggan baru.',
+                            icon: 'error',
+                            buttonsStyling: false, // <-- Matikan style default
+                            customClass: { // <-- Terapkan kelas Tailwind Anda
+                                confirmButton: 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded'
+                            }
+                        });
+                    })
                 } else {
                     $('#customer_search').val(null).trigger('change');
-                    $('#customer_details').hide();
+                    $('#vehicle_section').hide();
                     customer = null;
                 }
             });
@@ -197,25 +353,17 @@ $(function() {
     
     function setCustomer(data) {
         customer = data;
-        $('#customer_name').text(customer.name);
-        $('#customer_phone').text(customer.phone_number || ''); // Perbaikan bug 'undefined'
-        $('#vehicle_id').html('<option value="">-- Pilih Kendaraan --</option>');
-        
-        if(customer.vehicles && customer.vehicles.length > 0) {
-            customer.vehicles.forEach(v => $('#vehicle_id').append(`<option value="${v.id}">${v.license_plate} (${v.brand} ${v.model})</option>`));
-        }
-        
-        $('#customer_details').show();
+        @if(auth()->user()->company && auth()->user()->company->featureEnabled('services'))
+            $('#vehicle_section').show();
+            $('#vehicle_id').html('<option value="">-- Pilih Kendaraan --</option>');
+            if(customer.vehicles && customer.vehicles.length > 0) {
+                customer.vehicles.forEach(v => $('#vehicle_id').append(`<option value="${v.id}">${v.license_plate} (${v.brand} ${v.model})</option>`));
+            }
+        @endif
     }
 
-    // ===================================================
-    // KODE BARU UNTUK TAMBAH KENDARAAN
-    // ===================================================
     $('#addVehicleBtn').on('click', function() {
-        if (!customer) {
-            Swal.fire('Pilih Pelanggan!', 'Anda harus memilih pelanggan terlebih dahulu.', 'warning');
-            return;
-        }
+        if (!customer) return;
         showAddVehicleModal();
     });
 
@@ -226,16 +374,12 @@ $(function() {
                 <input id="swal-license_plate" class="swal2-input" placeholder="Nomor Plat (Contoh: L 1234 AB)">
                 <input id="swal-brand" class="swal2-input" placeholder="Merek (Contoh: Honda)">
                 <input id="swal-model" class="swal2-input" placeholder="Model (Contoh: Vario 125)">
-                <input id="swal-color" class="swal2-input" placeholder="Warna (Contoh: Merah)">
-            `,
+                <input id="swal-color" class="swal2-input" placeholder="Warna (Contoh: Merah)">`,
             confirmButtonText: 'Simpan Kendaraan',
             showCancelButton: true,
-            focusConfirm: false,
             preConfirm: () => {
                 const license_plate = $('#swal-license_plate').val();
-                if (!license_plate) {
-                    Swal.showValidationMessage(`Nomor Plat tidak boleh kosong`);
-                }
+                if (!license_plate) Swal.showValidationMessage(`Nomor Plat tidak boleh kosong`);
                 return {
                     customer_id: customer.id,
                     license_plate: license_plate,
@@ -250,105 +394,62 @@ $(function() {
                     _token: '{{ csrf_token() }}',
                     ...result.value
                 }, function(newVehicle) {
-                    // Tambahkan kendaraan baru ke dropdown dan langsung pilih
-                    var option = new Option(`${newVehicle.license_plate} (${newVehicle.brand} ${newVehicle.model})`, newVehicle.id, true, true);
+                    var displayText = `${newVehicle.license_plate} (${newVehicle.brand || ''} ${newVehicle.model || ''})`.trim();
+                    var option = new Option(displayText, newVehicle.id, true, true);
                     $('#vehicle_id').append(option).trigger('change');
                     Swal.fire('Berhasil!', 'Kendaraan baru berhasil ditambahkan.', 'success');
-                }).fail(function() {
-                    Swal.fire('Error!', 'Gagal menyimpan kendaraan baru.', 'error');
-                });
+                }).fail(() => Swal.fire('Error!', 'Gagal menyimpan kendaraan baru.', 'error'));
             }
         });
     }
 
     $('#vehicle_id').on('change', function() { vehicle_id = $(this).val(); });
-
-    $(document).on('click', '.customer-item', function() {
-        customer = $(this).data('customer');
-        $('#customer_name').text(customer.name);
-        $('#customer_phone').text(customer.phone_number);
-        $('#vehicle_id').html('<option value="">-- Select Vehicle --</option>');
-        customer.vehicles.forEach(v => $('#vehicle_id').append(`<option value="${v.id}">${v.license_plate} (${v.brand} ${v.model})</option>`));
-        $('#customer_details').show();
-        $('#customer_search_results').hide();
-        $('#customer_search').val(customer.name);
-    });
     
-    $('#vehicle_id').on('change', function() { vehicle_id = $(this).val(); });
+    // ===================================================
+    // FUNGSI PEMBAYARAN
+    // ===================================================
 
-    // ITEM SEARCH
-    $('#item_search').on('keyup', function() {
-        let term = $(this).val();
-        if (term.length < 2) { $('#item_search_results').hide(); return; }
-        $.get('{{ route("pos.items.search") }}', {term: term}, function(data) {
-            $('#item_search_results').html('').show();
-            data.forEach(i => $('#item_search_results').append(`<div class="p-2 hover:bg-gray-100 cursor-pointer item-item" data-item='${JSON.stringify(i)}'>${i.name}</div>`));
-        });
-    });
-
-    $(document).on('click', '.item-item', function() {
-        const item = $(this).data('item');
-        const existing = cart.find(i => i.id === item.id && i.type === item.type);
-        if (existing) {
-            existing.quantity++;
-        } else {
-            cart.push({...item, quantity: 1});
-        }
-        $('#item_search_results').hide();
-        $('#item_search').val('');
-        renderCart();
-    });
-
-    // RENDER CART
-    function renderCart() {
-        if (cart.length === 0) {
-            $('#cart').html('<p class="text-gray-500 text-center">Cart is empty.</p>');
-            $('#grand_total').text('Rp 0');
-            grandTotalValue = 0; // Reset nilai total
-            calculateChange(); // Hitung ulang kembalian
-            return;
-        }
-        
-        $('#cart').html('');
-        let currentTotal = 0; // Ganti nama variabel agar tidak konflik
-        cart.forEach((item, index) => {
-            const quantity = parseInt(item.quantity) || 0;
-            const price = parseFloat(item.price) || 0;
-            const subtotal = quantity * price;
-            currentTotal += subtotal;
-            
-            $('#cart').append(`
-                <div class="flex justify-between items-center text-sm" data-index="${index}">
-                    <div>
-                        <p class="font-semibold">${item.name}</p>
-                        <p class="text-gray-600">Rp ${price.toLocaleString('id-ID')}</p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <input type="number" value="${quantity}" class="quantity-input w-16 border-gray-300 rounded-md shadow-sm text-sm" data-index="${index}">
-                        <span class="w-24 text-right">Rp ${subtotal.toLocaleString('id-ID')}</span>
-                        <button class="remove-item text-red-500 hover:text-red-700">&times;</button>
-                    </div>
-                </div>
-            `);
-        });
-        
-        grandTotalValue = currentTotal; // Simpan nilai total mentah
-        $('#grand_total').text('Rp ' + grandTotalValue.toLocaleString('id-ID'));
-        calculateChange(); // Panggil fungsi kalkulasi kembalian setiap kali keranjang di-render ulang
-    }
+    $('#payment_method').on('change', function() {
+        if ($(this).val() === 'cash') $('#cash_payment_details').slideDown();
+        else $('#cash_payment_details').slideUp();
+    }).trigger('change');
+    
+    $('#amount_paid').on('input', calculateChange);
 
     function calculateChange() {
+        const grandTotal = cart.reduce((total, item) => total + item.quantity * item.price, 0);
         const amountPaid = parseFloat($('#amount_paid').val()) || 0;
-        let change = amountPaid - grandTotalValue;
-
-        if (change < 0 || amountPaid === 0) {
-            change = 0;
-        }
-        
+        let change = amountPaid - grandTotal;
+        if (change < 0 || !amountPaid) change = 0;
         $('#change_due').text('Rp ' + change.toLocaleString('id-ID'));
     }
 
-    // GENERATE QRIS
+    $('#process_sale').on('click', function() {
+        const grandTotal = cart.reduce((total, item) => total + (item.quantity * item.price), 0);
+        const button = $(this);
+
+        if (!customer) {
+            Swal.fire('Error', 'Silakan pilih pelanggan terlebih dahulu.', 'error');
+            return;
+        }
+        if (cart.length === 0) {
+            Swal.fire('Error', 'Keranjang tidak boleh kosong.', 'error');
+            return;
+        }
+
+        const paymentMethod = $('#payment_method').val();
+        if (paymentMethod === 'cash') {
+            const amountPaid = parseFloat($('#amount_paid').val()) || 0;
+            if (amountPaid < grandTotal) {
+                Swal.fire('Error', 'Uang tunai yang dibayarkan kurang dari total belanja.', 'error');
+                return;
+            }
+            processAjaxSale(grandTotal);
+        } else if (paymentMethod === 'qris') {
+            generateQrCode(grandTotal);
+        }
+    });
+
     function generateQrCode() {
         if (grandTotalValue <= 0) {
             Swal.fire('Error', 'Cannot generate QRIS for empty cart.', 'error');
@@ -427,92 +528,22 @@ $(function() {
         }
     }
 
-    // EVENT LISTENER BARU UNTUK METODE PEMBAYARAN & NOMINAL BAYAR
-    $('#payment_method').on('change', function() {
-        const method = $(this).val();
-        if (method === 'cash') {
-            $('#cash_payment_details').slideDown();
-            $('#process_sale').text('Process Sale'); // Kembalikan teks tombol
-        } else {
-            $('#cash_payment_details').slideUp();
-            $('#amount_paid').val('');
-            calculateChange();
-
-            if (method === 'qris') {
-                generateQrCode();
-                $('#process_sale').text('Confirm Payment & Process Sale'); // Ubah teks tombol
-            } else {
-                $('#process_sale').text('Process Sale');
-            }
-        }
-    });
-
-    $('#amount_paid').on('input', function() {
-        calculateChange();
-    });
-
-    $(document).on('input', '.quantity-input', function() {
-        const index = $(this).data('index'); // Langsung ambil dari elemen input itu sendiri
+    function processAjaxSale(grandTotal, qrisOrderId = null) {
+        $('#process_sale').prop('disabled', true).text('Processing...');
         
-        // Tambahkan pengecekan untuk memastikan index valid
-        if (typeof index === 'undefined' || !cart[index]) {
-            console.error("Invalid index or cart item not found for:", this);
-            return; // Hentikan eksekusi jika index tidak valid
-        }
-
-        const newQuantity = parseInt($(this).val()) || 0; 
-
-        if (newQuantity > 0) {
-            cart[index].quantity = newQuantity;
-        } else {
-            cart[index].quantity = 1;
-            $(this).val(1);
-        }
-        
-        renderCart();
-    });
-
-    $('#closeQrisModal').on('click', function() {
-        stopQrisPolling(); // <-- HENTIKAN POLLING
-        $('#qrisModal').addClass('hidden');
-        $('#payment_method').val('cash').trigger('change');
-    });
-
-    $(document).on('click', '.remove-item', function() {
-        const index = $(this).closest('.flex').data('index');
-        cart.splice(index, 1);
-        renderCart();
-    });
-
-    // PROCESS SALE
-    $('#process_sale').on('click', function() {
-        $(this).prop('disabled', true).text('Processing...');
-        if (!customer) {
-            Swal.fire('Error', 'Please select a customer.', 'error');
-            $('#process_sale').prop('disabled', false).text('Process Sale'); // Aktifkan kembali jika error
-            return;
-        }
-        if (cart.length === 0) {
-            Swal.fire('Error', 'Cart cannot be empty.', 'error');
-            $('#process_sale').prop('disabled', false).text('Process Sale'); // Aktifkan kembali jika error
-            return;
-        }
-
-        const paymentMethod = $('#payment_method').val();
-        const amountPaid = parseFloat($('#amount_paid').val()) || 0;
-        if (paymentMethod === 'cash' && amountPaid < grandTotalValue) {
-            Swal.fire('Error', 'Amount paid is less than the grand total.', 'error');
-            $('#process_sale').prop('disabled', false).text('Process Sale'); // Aktifkan kembali jika error
-            return;
-        }
-
         const saleData = {
             customer_id: customer.id,
             vehicle_id: vehicle_id,
-            payment_method: paymentMethod,
-            items: cart,
-            // Tambahkan baris ini untuk menyimpan Order ID dari Midtrans
-            invoice_number: (paymentMethod === 'qris' && currentQrisOrderId) ? currentQrisOrderId : 'INV-' + Date.now(),
+            payment_method: $('#payment_method').val(),
+            items: cart.map(item => ({
+                id: item.id,
+                type: item.type,
+                name: item.name,
+                price: item.price,
+                quantity: item.quantity,
+                note: item.note || ''
+            })),
+            invoice_number: qrisOrderId || 'INV-' + Date.now(),
         };
 
         $.ajax({
@@ -523,46 +554,46 @@ $(function() {
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
             success: function(response) {
                 Swal.fire({
-                title: 'Success!',
-                text: response.success,
-                icon: 'success',
-                showCancelButton: true,
-                confirmButtonText: 'Print Receipt',
-                cancelButtonText: 'New Sale',
-                buttonsStyling: false,
-                customClass: {
-                    confirmButton: 'bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded',
-                    cancelButton: 'bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded ml-2'
-                }
-            }).then((result) => {
-                // Jika kasir menekan tombol "Print Receipt"
-                if (result.isConfirmed) {
-                    const receiptUrl = `/sales/${response.sale_id}/receipt`;
-                    
-                    // Muat konten struk ke iframe dan cetak
-                    $('#receipt-iframe').attr('src', receiptUrl);
-                    $('#receipt-iframe').on('load', function() {
-                        this.contentWindow.print();
-                    });
-                }
-            });
-
-            // Reset form untuk transaksi selanjutnya
-            customer = null; cart = []; vehicle_id = null; currentQrisOrderId = null; isQrisPaid = false;
-            $('#customer_details').hide();
-            $('#customer_search').val('');
-            $('#payment_method').val('cash').trigger('change');
-            renderCart();
-
-            $('#process_sale').prop('disabled', false).text('Process Sale');
+                    title: 'Transaksi Berhasil!',
+                    text: response.success,
+                    icon: 'success',
+                    showCancelButton: true,
+                    confirmButtonText: 'Cetak Struk',
+                    cancelButtonText: 'Transaksi Baru',
+                    customClass: {
+                        confirmButton: 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded',
+                        cancelButton: 'bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded ml-2'
+                    },
+                    buttonsStyling: false
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const receiptUrl = `/sales/${response.sale_id}/receipt`;
+                        $('#receipt-iframe').attr('src', receiptUrl);
+                        $('#receipt-iframe').on('load', function() {
+                            this.contentWindow.print();
+                        });
+                    }
+                    resetTransaction();
+                });
             },
             error: function(xhr) {
-                Swal.fire('Error!', xhr.responseJSON.error || 'Something went wrong.', 'error');
-                // 3. Aktifkan kembali tombol jika terjadi error
-                $('#process_sale').prop('disabled', false).text('Process Sale');
+                Swal.fire('Error!', xhr.responseJSON.error || 'Terjadi kesalahan.', 'error');
+                $('#process_sale').prop('disabled', false).text('Bayar');
             }
         });
-    });
+    }
+
+    function resetTransaction() {
+        customer = null;
+        vehicle_id = null;
+        cart = [];
+        $('#customer_search').val(null).trigger('change');
+        $('#vehicle_section').hide();
+        renderCart();
+        $('#payment_method').val('cash').trigger('change');
+        $('#amount_paid').val('');
+        $('#process_sale').prop('disabled', false).text('Bayar');
+    }
 });
 </script>
 @endpush

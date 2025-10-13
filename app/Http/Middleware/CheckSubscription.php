@@ -16,13 +16,19 @@ class CheckSubscription
 
         $company = $user->company;
 
-        // Cek jika user tidak punya company ATAU masa trial sudah lewat
-        if (!$company || ($company->trial_ends_at && $company->trial_ends_at->isPast())) {
-            // Arahkan ke halaman pembayaran (yang akan kita buat)
-            return redirect()->route('billing.index')->with('error', 'Masa uji coba Anda telah berakhir. Silakan berlangganan untuk melanjutkan.');
+        if (!$company) {
+            abort(403, 'Akses ditolak.');
         }
 
-        // Jika semua aman (masih dalam masa trial), izinkan akses
-        return $next($request);
+        $isSubscribed = $company->subscription_ends_at && $company->subscription_ends_at->isFuture();
+        $onTrial = $company->trial_ends_at && $company->trial_ends_at->isFuture();
+
+        if ($isSubscribed || $onTrial) {
+            // Jika salah satu kondisi terpenuhi, izinkan akses
+            return $next($request);
+        }
+
+        // Jika tidak keduanya, arahkan ke halaman billing
+        return redirect()->route('billing.index')->with('error', 'Langganan Anda telah berakhir. Silakan perbarui paket Anda.');
     }
 }
