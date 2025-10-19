@@ -291,19 +291,27 @@ $(function() {
         }
     });
 
+    // EVENT HANDLER YANG TELAH DISERDERHANAKAN
     $('#customer_search').on('select2:select', function (e) {
-        var customerData = e.params.data['data-customer'] || { id: e.params.data.id };
+        const selectedData = e.params.data;
 
-        if (String(customerData.id).startsWith('new:')) {
-            const newName = String(customerData.id).split(':')[1];
+        // Safety Check #1: Pastikan ada data yang terpilih
+        if (!selectedData) {
+            return;
+        }
+
+        // Alur 1: Jika user memilih "➕ Tambah Pelanggan Baru..."
+        if (String(selectedData.id).startsWith('new:')) {
+            const newName = String(selectedData.id).split(':')[1];
             
+            // Tampilkan modal SweetAlert yang sederhana
             Swal.fire({
                 title: 'Tambah Pelanggan Baru',
-                html: `<input id="swal-name" class="swal2-input" value="${newName}" placeholder="Nama Pelanggan"><input id="swal-phone" class="swal2-input" placeholder="Nomor Telepon (Opsional)">`,
+                html: `<input id="swal-name" class="swal2-input" value="${newName}" placeholder="Nama Pelanggan">
+                    <input id="swal-phone" class="swal2-input" placeholder="Nomor Telepon (Opsional)">`,
                 confirmButtonText: 'Simpan',
                 showCancelButton: true,
                 cancelButtonText: 'Batal',
-                showCancelButton: true,
                 buttonsStyling: false,
                 customClass: {
                     confirmButton: 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded',
@@ -311,53 +319,59 @@ $(function() {
                 },
                 preConfirm: () => {
                     const name = $('#swal-name').val();
-                    if (!name) Swal.showValidationMessage(`Nama tidak boleh kosong`);
-                    return { name: name, phone_number: $('#swal-phone').val() };
+                    if (!name) {
+                        Swal.showValidationMessage(`Nama pelanggan tidak boleh kosong`);
+                        return false;
+                    }
+                    return {
+                        name: name,
+                        phone_number: $('#swal-phone').val()
+                    };
                 }
             }).then((result) => {
                 if (result.isConfirmed) {
-                    $.post('{{ route('customers.store') }}', {
-                        _token: '{{ csrf_token() }}',
-                        ...result.value
-                    }, function(newCustomer) {
-                        newCustomer.vehicles = [];
+                    // Kirim data via AJAX
+                    $.post('{{ route('customers.store') }}', { _token: '{{ csrf_token() }}', ...result.value })
+                    .done(function(newCustomer) {
+                        // Update UI
                         setCustomer(newCustomer);
-                        var option = new Option(newCustomer.name + (newCustomer.phone_number ? ` (${newCustomer.phone_number})` : ''), newCustomer.id, true, true);
+                        const option = new Option(newCustomer.name + (newCustomer.phone_number ? ` (${newCustomer.phone_number})` : ''), newCustomer.id, true, true);
                         $('#customer_search').append(option).trigger('change');
-                        
-                        @if(auth()->user()->company && auth()->user()->company->featureEnabled('services'))
-                            showAddVehicleModal();
-                        @endif
+                        Swal.fire('Berhasil!', 'Pelanggan baru berhasil disimpan.', 'success');
                     })
                     .fail(() => {
-                        Swal.fire({
-                            title: 'Error!',
-                            text: 'Gagal menyimpan pelanggan baru.',
-                            icon: 'error',
-                            buttonsStyling: false, // <-- Matikan style default
-                            customClass: { // <-- Terapkan kelas Tailwind Anda
-                                confirmButton: 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded'
-                            }
-                        });
-                    })
+                        Swal.fire('Error!', 'Gagal menyimpan pelanggan baru.', 'error');
+                        $('#customer_search').val(null).trigger('change');
+                    });
                 } else {
+                    // Jika user menekan "Batal", reset pilihan
                     $('#customer_search').val(null).trigger('change');
-                    $('#vehicle_section').hide();
-                    customer = null;
                 }
             });
+        
+        // Alur 2: Jika memilih pelanggan yang sudah ada (hasil dari AJAX)
+        } else if (selectedData['data-customer']) {
+            setCustomer(selectedData['data-customer']);
+        
+        // Alur 3 (Fallback): Jika terjadi kondisi aneh, reset saja.
         } else {
-            setCustomer(customerData);
+            $('#customer_search').val(null).trigger('change');
         }
     });
-    
+
     function setCustomer(data) {
         customer = data;
-        @if(auth()->user()->company && auth()->user()->company->featureEnabled('services'))
+        
+        // Cek jika fitur jasa aktif untuk menampilkan/menyembunyikan bagian kendaraan
+        @if(auth()->user()->company && auth()->user()->company->featureEnabled('service_management'))
             $('#vehicle_section').show();
-            $('#vehicle_id').html('<option value="">-- Pilih Kendaraan --</option>');
-            if(customer.vehicles && customer.vehicles.length > 0) {
-                customer.vehicles.forEach(v => $('#vehicle_id').append(`<option value="${v.id}">${v.license_plate} (${v.brand} ${v.model})</option>`));
+            const vehicleSelect = $('#vehicle_id');
+            vehicleSelect.html('<option value="">-- Pilih Kendaraan --</option>');
+            if(customer && customer.vehicles && customer.vehicles.length > 0) {
+                customer.vehicles.forEach(v => {
+                    const vehicleText = `${v.license_plate} (${v.brand || ''} ${v.model || ''})`.trim();
+                    vehicleSelect.append(new Option(vehicleText, v.id));
+                });
             }
         @endif
     }
@@ -450,9 +464,9 @@ $(function() {
         }
     });
 
-    function generateQrCode() {
-        if (grandTotalValue <= 0) {
-            Swal.fire('Error', 'Cannot generate QRIS for empty cart.', 'error');
+    function generateQrCode(grandTotal) { // 1. Terima argumen 'grandTotal'
+        if (grandTotal <= 0) { // 2. Gunakan 'grandTotal'
+            Swal.fire('Error', 'Tidak bisa membuat QRIS untuk keranjang kosong.', 'error');
             $('#payment_method').val('cash').trigger('change'); // Kembalikan ke cash
             return;
         }
@@ -469,21 +483,22 @@ $(function() {
             method: 'POST',
             data: {
                 _token: '{{ csrf_token() }}',
-                amount: grandTotalValue
+                amount: grandTotal // 3. Gunakan 'grandTotal'
             },
             success: function(response) {
                 // Sembunyikan spinner dan tampilkan QR
                 $('#qris-spinner').hide();
                 $('#qris-image').attr('src', response.qr_code_url).show();
-                $('#qris-amount').text('Rp ' + grandTotalValue.toLocaleString('id-ID'));
-                $('#qris-expiry').text('Expires at: ' + response.expiry_time);
+                $('#qris-amount').text('Rp ' + grandTotal.toLocaleString('id-ID')); // 4. Gunakan 'grandTotal'
+                $('#qris-expiry').text('Berlaku hingga: ' + response.expiry_time);
                 
                 // SIMPAN ORDER ID DAN MULAI POLLING SETELAH DAPAT RESPON
-                currentQrisOrderId = response.order_id; 
+                let currentQrisOrderId = response.order_id; 
                 startQrisPolling(currentQrisOrderId);
             },
-            error: function() {
-                Swal.fire('Error', 'Failed to generate QRIS code. Please try again.', 'error');
+            error: function(xhr) { // Tambahkan 'xhr' untuk pesan error lebih detail
+                const errorMsg = xhr.responseJSON ? xhr.responseJSON.error : 'Gagal membuat kode QRIS. Silakan coba lagi.';
+                Swal.fire('Error', errorMsg, 'error');
                 $('#qrisModal').addClass('hidden');
                 $('#payment_method').val('cash').trigger('change');
             }
@@ -491,7 +506,8 @@ $(function() {
     }
 
     function startQrisPolling(orderId) {
-        isQrisPaid = false; 
+        let isQrisPaid = false; 
+        
         // Hentikan polling sebelumnya jika ada
         if (qrisPollingInterval) {
             clearInterval(qrisPollingInterval);
@@ -500,23 +516,32 @@ $(function() {
         // Mulai polling baru setiap 3 detik
         qrisPollingInterval = setInterval(function() {
 
+            // Jika sudah lunas, hentikan interval dan jangan lakukan apa-apa lagi
             if (isQrisPaid) { 
                 stopQrisPolling();
                 return;
             }
 
             $.get(`/pos/qris/status/${orderId}`, function(data) {
-                // Jika pembayaran berhasil (settlement)
+                // Jika pembayaran berhasil (settlement) dan belum diproses
                 if (data.transaction_status === 'settlement' && !isQrisPaid) {
-                isQrisPaid = true; // <-- SET FLAG MENJADI TRUE
-                
-                stopQrisPolling();
-                $('#qrisModal').addClass('hidden');
-                $('#process_sale').click(); 
-            }
+                    isQrisPaid = true; // Tandai sudah lunas untuk mencegah eksekusi ganda
+                    
+                    stopQrisPolling(); // Hentikan pengecekan
+                    $('#qrisModal').addClass('hidden'); // Tutup modal QR
+
+                    // --- INI PERUBAHAN UTAMANYA ---
+                    // Langsung panggil fungsi untuk menyimpan data ke database,
+                    // bukan mengklik tombol 'Bayar' lagi.
+                    const grandTotal = cart.reduce((total, item) => total + (item.quantity * item.price), 0);
+                    processAjaxSale(grandTotal, orderId); // Kirim orderId sebagai nomor invoice
+                }
             }).fail(function() {
-                // Hentikan polling jika transaksi tidak ditemukan (misal, expired)
+                // Hentikan polling jika transaksi tidak ditemukan (misal, kedaluwarsa)
                 stopQrisPolling();
+                // Opsional: Beri tahu kasir jika QR sudah kedaluwarsa
+                Swal.fire('Info', 'Sesi pembayaran QRIS telah berakhir atau tidak ditemukan.', 'info');
+                $('#qrisModal').addClass('hidden');
             });
         }, 3000); // Cek setiap 3 detik
     }

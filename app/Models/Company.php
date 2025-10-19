@@ -21,23 +21,19 @@ class Company extends Tenant
         'longitude',
         'wifi_ssid',
         'wifi_password',
-        'features',
         'trial_ends_at',
         'payment_gateway_provider',
         'payment_gateway_keys',
         'payment_gateway_is_production',
+        'plan_id',                  // <-- TAMBAHKAN INI
+        'subscription_ends_at',
     ];
     protected $casts = [
-        'features' => 'array',
         'trial_ends_at' => 'datetime',
         'subscription_ends_at' => 'datetime',
         'payment_gateway_keys' => 'encrypted:array',
         'payment_gateway_is_production' => 'boolean',
     ];
-    public function featureEnabled(string $feature): bool
-    {
-        return $this->features[$feature] ?? false;
-    }
 
     public function isCurrent(): bool
     {
@@ -56,5 +52,19 @@ class Company extends Tenant
     public function plan()
     {
         return $this->belongsTo(Plan::class);
+    }
+    public function featureEnabled(string $featureKey): bool
+    {
+        // Cek 1: Pastikan langganan ada dan masih aktif.
+        if (!$this->plan_id || !$this->subscription_ends_at || $this->subscription_ends_at->isPast()) {
+            return false;
+        }
+
+        // Cek 2: Muat ulang relasi untuk mendapatkan data terbaru.
+        $this->load('plan.features');
+
+        // Cek 3: Periksa apakah fitur ada di dalam plan.
+        // Penggunaan optional() membuatnya aman bahkan jika relasi plan gagal dimuat.
+        return optional($this->plan)->features->contains('key', $featureKey) ?? false;
     }
 }

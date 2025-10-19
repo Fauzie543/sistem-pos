@@ -15,7 +15,6 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\Settings\PaymentGatewayController;
-use App\Http\Controllers\SuperAdmin\FeatureManagementController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\PlanController;
 
@@ -37,8 +36,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('dashboard');
 
     Route::middleware('role:superadmin')->prefix('superadmin')->name('superadmin.')->group(function () {
-        Route::get('features', [FeatureManagementController::class, 'index'])->name('features.index');
-        Route::post('features', [FeatureManagementController::class, 'update'])->name('features.update');
         Route::resource('plans', PlanController::class);
     });
 
@@ -73,7 +70,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             
         });
 
-        Route::prefix('services')->name('services.')->middleware('feature:services')->group(function () {
+        Route::prefix('services')->name('services.')->middleware('feature:service_management')->group(function () {
             Route::get('/', [ServiceController::class, 'index'])->name('index');
             Route::get('/data', [ServiceController::class, 'data'])->name('data');
             Route::post('/', [ServiceController::class, 'store'])->name('store');
@@ -112,7 +109,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::delete('/{vehicle}', [VehicleController::class, 'destroy'])->name('destroy');
         });
 
-        Route::prefix('purchases')->name('purchases.')->middleware('feature:purchases')->group(function () {
+        Route::prefix('purchases')->name('purchases.')->middleware('feature:purchase_management')->group(function () {
             // Route untuk mencari produk via AJAX di form create
             Route::get('/products/search', [PurchaseController::class, 'searchProducts'])->name('products.search');
             Route::get('/data', [PurchaseController::class, 'data'])->name('data');

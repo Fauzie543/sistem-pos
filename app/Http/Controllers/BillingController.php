@@ -6,8 +6,10 @@ use Illuminate\Http\Request;
 use App\Models\Plan;
 use App\Models\PlanTier;
 use App\Models\Company;
+use App\Models\Transaction as SubscriptionTransaction;
 use Midtrans\Config;
 use Midtrans\Snap;
+use Spatie\Multitenancy\Landlord;
 
 class BillingController extends Controller
 {
@@ -21,7 +23,7 @@ class BillingController extends Controller
     
     public function index()
     {
-        $plans = Plan::where('is_active', true)->with('tiers')->get();
+        $plans = Plan::where('is_active', true)->with(['tiers', 'features'])->get();
         return view('billing.index', compact('plans'));
     }
 
@@ -35,7 +37,7 @@ class BillingController extends Controller
         $tier = PlanTier::with('plan')->find($request->plan_tier_id);
 
         // 1. Buat record transaksi dengan status 'pending'
-        $transaction = Transaction::create([
+        $transaction = SubscriptionTransaction::create([
             'company_id' => $company->id,
             'plan_tier_id' => $tier->id,
             'order_id' => 'SUB-' . $company->id . '-' . time(),
@@ -48,8 +50,18 @@ class BillingController extends Controller
                 'order_id' => $transaction->order_id, // Gunakan order_id dari database
                 'gross_amount' => $tier->price,
             ],
-            'item_details' => [[ /* ... (tidak berubah) ... */ ]],
-            'customer_details' => [ /* ... (tidak berubah) ... */ ],
+            'item_details' => [[
+                'id'       => $tier->key, // ID unik untuk item, misal: "bengkel_monthly"
+                'price'    => $tier->price,
+                'quantity' => 1,
+                'name'     => 'Langganan ' . $tier->plan->name . ' (' . $tier->duration_months . ' Bulan)',
+            ]],
+            'customer_details' => [
+                'first_name' => $user->name,
+                'email'      => $user->email,
+                'phone'      => $company->phone ?? '', // Ambil dari data company jika ada
+            ],
+            'custom_field1' => $tier->id,
         ];
 
         try {
@@ -72,31 +84,38 @@ class BillingController extends Controller
         $hashed = hash("sha512", $request->order_id . $request->status_code . $request->gross_amount . $serverKey);
 
         if ($hashed == $request->signature_key) {
-            if ($request->transaction_status == 'settlement' || $request->transaction_status == 'capture') {
-                
-                // Ambil tier_id dari metadata yang kita kirim sebelumnya
-                $tier_id = $request->custom_field1;
-                $tier = PlanTier::find($tier_id);
+            
+            // ===============================================
+            // PERBAIKAN DI SINI: Gunakan Landlord::execute()
+            // ===============================================
+            Landlord::execute(function () use ($request) {
+                // Cari transaksi di database Anda berdasarkan order_id
+                $transaction = SubscriptionTransaction::where('order_id', $request->order_id)->first();
 
-                // Cari company_id dari order_id
-                $orderParts = explode('-', $request->order_id);
-                $companyId = $orderParts[1] ?? null;
+                if ($transaction) {
+                    // Update status transaksi di database Anda
+                    $transaction->update(['status' => $request->transaction_status]);
 
-                if ($tier && $companyId) {
-                    $company = Company::find($companyId);
-                    if ($company) {
-                         // Hitung tanggal akhir langganan
-                        $subscriptionEndDate = now()->addMonths($tier->duration_months);
+                    // Jika pembayaran berhasil
+                    if ($request->transaction_status == 'settlement' || $request->transaction_status == 'capture') {
+                        
+                        $tier = $transaction->planTier;
+                        $company = $transaction->company;
 
-                        // Update data perusahaan
-                        $company->update([
-                            'plan_id' => $tier->plan_id,
-                            'subscription_ends_at' => $subscriptionEndDate,
-                            'trial_ends_at' => null, // Matikan masa trial
-                        ]);
+                        if ($tier && $company) {
+                            // Hitung tanggal akhir langganan
+                            $subscriptionEndDate = now()->addMonths($tier->duration_months);
+
+                            // Update data perusahaan
+                            $company->update([
+                                'plan_id' => $tier->plan_id,
+                                'subscription_ends_at' => $subscriptionEndDate,
+                                'trial_ends_at' => null, // Matikan masa trial
+                            ]);
+                        }
                     }
                 }
-            }
+            });
         }
         
         return response('OK', 200);

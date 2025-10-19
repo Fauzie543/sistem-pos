@@ -1,3 +1,22 @@
+{{-- /resources/views/layouts/partials/topnav.blade.php --}}
+
+@php
+    // Atur nama dan logo default untuk Super Admin
+    $appName = 'Sistem POS';
+    $appLogo = 'https://flowbite.com/docs/images/logo.svg'; // Logo default Anda
+
+    // Jika pengguna yang login BUKAN superadmin, coba ambil data dari company mereka
+    if (auth()->check() && auth()->user()->role->name !== 'superadmin') {
+        $company = auth()->user()->company;
+        if ($company) {
+            $appName = $company->name;
+            if ($company->logo) {
+                $appLogo = Storage::url($company->logo);
+            }
+        }
+    }
+@endphp
+
 <nav class="fixed top-0 z-50 w-full bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
     <div class="px-3 py-3 lg:px-5 lg:pl-3">
         <div class="flex items-center justify-between">
@@ -9,16 +28,22 @@
                         <path clip-rule="evenodd" fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z"></path>
                     </svg>
                 </button>
-                {{-- Logo Aplikasi --}}
+                
+                {{-- =============================================== --}}
+                {{-- AWAL PERUBAHAN LOGO & NAMA APLIKASI DINAMIS --}}
+                {{-- =============================================== --}}
                 <a href="{{ route('dashboard') }}" class="flex ms-2 md:me-24">
-                    {{-- Tampilkan logo dari DB, jika tidak ada, tampilkan default --}}
-                    <img src="{{ ($company && $company->logo) ? Storage::url($company->logo) : 'https://flowbite.com/docs/images/logo.svg' }}" class="h-8 me-3" alt="Company Logo" />
+                    {{-- Gunakan variabel $appLogo yang sudah didefinisikan di atas --}}
+                    <img src="{{ $appLogo }}" class="h-8 me-3" alt="App Logo" />
                     
-                    {{-- Tampilkan nama dari DB, jika tidak ada, tampilkan default --}}
+                    {{-- Gunakan variabel $appName yang sudah didefinisikan di atas --}}
                     <span class="self-center text-xl font-semibold sm:text-2xl whitespace-nowrap dark:text-white">
-                        {{ $company->name ?? 'Sistem POS' }}
+                        {{ $appName }}
                     </span>
                 </a>
+                {{-- =============================================== --}}
+                {{-- AKHIR PERUBAHAN --}}
+                {{-- =============================================== --}}
             </div>
             
             {{-- Menu User (Kanan Atas) --}}

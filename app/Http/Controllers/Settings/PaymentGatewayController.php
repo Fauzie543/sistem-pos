@@ -19,15 +19,22 @@ class PaymentGatewayController extends Controller
         $company = auth()->user()->company;
 
         $request->validate([
-            'payment_gateway_provider' => 'nullable|in:midtrans,gopay',
+            // Validasi untuk memastikan semua kunci yang dibutuhkan ada jika salah satu diisi
+            'keys.merchant_id' => 'nullable|string',
+            'keys.client_key' => 'nullable|string',
+            'keys.server_key' => 'nullable|string',
             'payment_gateway_is_production' => 'boolean',
-            'keys' => 'nullable|array',
         ]);
 
+        $keys = $request->keys;
+
+        // Jika semua kunci kosong, anggap user ingin menonaktifkan
+        $isAllKeysEmpty = empty($keys['merchant_id']) && empty($keys['client_key']) && empty($keys['server_key']);
+
         $company->update([
-            'payment_gateway_provider' => $request->payment_gateway_provider,
+            'payment_gateway_provider' => $isAllKeysEmpty ? null : 'midtrans',
             'payment_gateway_is_production' => $request->payment_gateway_is_production,
-            'payment_gateway_keys' => $request->keys, // Simpan semua kunci sebagai JSON
+            'payment_gateway_keys' => $keys,
         ]);
 
         return redirect()->route('settings.payment.index')->with('success', 'Pengaturan gateway pembayaran berhasil diperbarui.');

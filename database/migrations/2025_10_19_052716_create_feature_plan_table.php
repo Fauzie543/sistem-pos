@@ -11,9 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('companies', function (Blueprint $table) {
-            // Kolom untuk menyimpan fitur yang aktif, misal: {"services": true, "purchases": true}
-            $table->json('features')->nullable()->after('longitude');
+        Schema::create('feature_plan', function (Blueprint $table) {
+            $table->foreignId('feature_id')->constrained()->onDelete('cascade');
+            $table->foreignId('plan_id')->constrained()->onDelete('cascade');
+            $table->primary(['feature_id', 'plan_id']);
         });
     }
 
@@ -22,8 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('companies', function (Blueprint $table) {
-            $table->dropColumn('features');
-        });
+        Schema::dropIfExists('feature_plan');
     }
 };

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Customer;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Company;
 use App\Models\Service;
 use App\Models\Sale;
 use App\Models\SaleDetail;
@@ -19,6 +20,28 @@ use Yajra\DataTables\Facades\DataTables;
 
 class SaleController extends Controller
 {
+    private function setupTenantMidtransConfig(): bool
+    {
+        $company = auth()->user()->company;
+
+        // Cek apakah perusahaan memiliki konfigurasi Midtrans yang valid
+        if (
+            !$company ||
+            $company->payment_gateway_provider !== 'midtrans' ||
+            empty($company->payment_gateway_keys['server_key'])
+        ) {
+            return false; // Konfigurasi tidak ditemukan atau tidak lengkap
+        }
+
+        // Terapkan konfigurasi Midtrans milik tenant
+        Config::$serverKey = $company->payment_gateway_keys['server_key'];
+        Config::$isProduction = $company->payment_gateway_is_production;
+        Config::$isSanitized = true;
+        Config::$is3ds = true;
+
+        return true; // Konfigurasi berhasil diterapkan
+    }
+    
     public function index()
     {
         // Ambil semua kategori yang memiliki produk atau jasa
@@ -181,19 +204,18 @@ class SaleController extends Controller
         return response()->json($products->concat($services));
     }
 
+    
     public function generateQris(Request $request)
     {
-        // Validasi input
         $request->validate(['amount' => ['required', 'numeric', 'min:1']]);
 
-        // 1. Konfigurasi Midtrans
-        Config::$serverKey = config('services.midtrans.server_key', env('MIDTRANS_SERVER_KEY'));
-        Config::$isProduction = config('services.midtrans.is_production', env('MIDTRANS_IS_PRODUCTION'));
-        Config::$isSanitized = true;
-        Config::$is3ds = true;
+        // 1. Panggil helper untuk mengatur konfigurasi Midtrans
+        if (!$this->setupTenantMidtransConfig()) {
+            return response()->json(['error' => 'Konfigurasi pembayaran QRIS tidak ditemukan atau tidak lengkap.'], 500);
+        }
 
         // 2. Buat parameter untuk dikirim ke Midtrans
-        $orderId = 'BENGKEL-' . uniqid(); // Buat ID Order yang unik
+        $orderId = 'INV-' . auth()->user()->company_id . '-' . time();
         $params = [
             'payment_type' => 'qris',
             'transaction_details' => [
@@ -203,13 +225,13 @@ class SaleController extends Controller
         ];
 
         try {
-            // 3. Panggil API Midtrans untuk membuat transaksi
+            // 3. Panggil API Midtrans
             $response = CoreApi::charge($params);
 
             // 4. Kirim kembali data yang dibutuhkan ke frontend
             return response()->json([
                 'order_id' => $orderId,
-                'qr_code_url' => $response->actions[0]->url, // URL gambar QR code
+                'qr_code_url' => $response->actions[0]->url,
                 'expiry_time' => $response->expiry_time,
             ]);
 
@@ -220,18 +242,18 @@ class SaleController extends Controller
 
     public function checkQrisStatus($orderId)
     {
-        // Konfigurasi Midtrans
-        Config::$serverKey = config('services.midtrans.server_key', env('MIDTRANS_SERVER_KEY'));
-        Config::$isProduction = config('services.midtrans.is_production', env('MIDTRANS_IS_PRODUCTION'));
+        // 1. Panggil helper untuk mengatur konfigurasi Midtrans
+        if (!$this->setupTenantMidtransConfig()) {
+            return response()->json(['error' => 'Konfigurasi pembayaran tidak ditemukan.'], 500);
+        }
 
         try {
-            // Panggil API Midtrans untuk mendapatkan status
+            // 2. Panggil API Midtrans untuk mendapatkan status
             $status = Transaction::status($orderId);
 
-            // Kirim status kembali ke frontend
             return response()->json(['transaction_status' => $status->transaction_status]);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Transaction not found or error.'], 404);
+            return response()->json(['error' => 'Transaksi tidak ditemukan atau terjadi kesalahan.'], 404);
         }
     }
 

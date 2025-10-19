@@ -8,12 +8,8 @@ class CheckFeatureIsEnabled
 {
     public function handle(Request $request, Closure $next, string $feature): Response
     {
-        // Ambil data fitur dari company user yang login
-        $features = auth()->user()->company->features ?? [];
-
-        // Cek apakah fitur yang diminta ada dan nilainya true
-        if (!isset($features[$feature]) || $features[$feature] !== true) {
-            // Jika tidak aktif, tolak akses
+        // Panggil method featureEnabled() yang sudah benar logikanya
+        if (!auth()->user()->company || !auth()->user()->company->featureEnabled($feature)) {
             abort(403, 'This feature is not enabled for your account.');
         }
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\SuperAdmin;
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use Illuminate\Http\Request;
+use App\Models\Feature;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
@@ -24,9 +25,12 @@ class PlanController extends Controller
      */
     public function create()
     {
-        return view('superadmin.plans.create');
+        $features = Feature::all(); // Ambil semua fitur dari database
+        return view('superadmin.plans.create', [
+            'plan' => new Plan(), // Kirim objek Plan baru yang kosong
+            'features' => $features, // Kirim daftar fitur ke view
+        ]);
     }
-
     /**
      * Menyimpan paket baru ke database.
      */
@@ -37,18 +41,14 @@ class PlanController extends Controller
         try {
             DB::beginTransaction();
 
-            // Ubah string fitur menjadi array
-            $features = array_filter(array_map('trim', explode("\n", $validated['features_text'])));
+            $plan = Plan::create($validated);
 
-            $plan = Plan::create([
-                'key' => $validated['key'],
-                'name' => $validated['name'],
-                'description' => $validated['description'],
-                'features' => $features,
-                'is_active' => $request->has('is_active'),
-            ]);
+            // Hubungkan fitur yang dipilih
+            if (isset($validated['feature_ids'])) {
+                $plan->features()->sync($validated['feature_ids']);
+            }
 
-            // Simpan tingkatan harga (tiers)
+            // Simpan tingkatan harga
             foreach ($validated['tiers'] as $tierData) {
                 $plan->tiers()->create($tierData);
             }
@@ -67,8 +67,9 @@ class PlanController extends Controller
      */
     public function edit(Plan $plan)
     {
-        $plan->load('tiers');
-        return view('superadmin.plans.edit', compact('plan'));
+        $features = Feature::all();
+        $plan->load('tiers', 'features');
+        return view('superadmin.plans.edit', compact('plan', 'features'));
     }
 
     /**
@@ -80,18 +81,14 @@ class PlanController extends Controller
 
         try {
             DB::beginTransaction();
+            $plan->update($validated);
 
-            $features = array_filter(array_map('trim', explode("\n", $validated['features_text'])));
+            if (isset($validated['feature_ids'])) {
+                $plan->features()->sync($validated['feature_ids']);
+            } else {
+                $plan->features()->detach(); // Hapus semua fitur jika tidak ada yang dipilih
+            }
 
-            $plan->update([
-                'key' => $validated['key'],
-                'name' => $validated['name'],
-                'description' => $validated['description'],
-                'features' => $features,
-                'is_active' => $request->has('is_active'),
-            ]);
-
-            // Hapus tier lama dan buat ulang (cara paling simpel)
             $plan->tiers()->delete();
             foreach ($validated['tiers'] as $tierData) {
                 $plan->tiers()->create($tierData);
@@ -124,12 +121,13 @@ class PlanController extends Controller
             'name' => 'required|string|max:255',
             'key' => ['required', 'string', 'alpha_dash', Rule::unique('plans')->ignore($planId)],
             'description' => 'nullable|string',
-            'features_text' => 'required|string',
             'is_active' => 'nullable',
             'tiers' => 'required|array|min:1',
             'tiers.*.duration_months' => 'required|integer|min:1',
             'tiers.*.price' => 'required|integer|min:0',
             'tiers.*.key' => 'required|string',
+            'feature_ids' => 'nullable|array',
+            'feature_ids.*' => 'exists:features,id',
         ]);
     }
 }

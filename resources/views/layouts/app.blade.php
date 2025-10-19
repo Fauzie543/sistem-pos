@@ -5,22 +5,36 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ $company->name ?? 'Lemedoit' }} | @yield('title', 'Dashboard')</title>
-        @if($company && $company->logo)
-            <link rel="icon" href="{{ Storage::url($company->logo) }}">
-            <link rel="apple-touch-icon" href="{{ Storage::url($company->logo) }}">
-        @else
-            {{-- Pastikan ada file 'favicon.ico' di folder /public --}}
-            <link rel="icon" href="{{ asset('favicon.ico') }}">
-        @endif
+        @php
+            // Default untuk superadmin atau tamu (halaman login)
+            $appName = 'Sistem POS'; 
+            $appLogo = asset('favicon.ico');
+
+            // Jika yang login BUKAN superadmin, coba ambil data company
+            if (auth()->check() && auth()->user()->role->name !== 'superadmin') {
+                $company = auth()->user()->company;
+                if ($company) {
+                    $appName = $company->name;
+                    if ($company->logo) {
+                        $appLogo = Storage::url($company->logo);
+                    }
+                }
+            }
+        @endphp
+
+        <title>{{ $appName }} | @yield('title', 'Dashboard')</title>
+        
+        {{-- Gunakan variabel $appLogo untuk favicon --}}
+        <link rel="icon" href="{{ $appLogo }}">
+        <link rel="apple-touch-icon" href="{{ $appLogo }}">
 
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
         @vite(['resources/css/app.css'])
         <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdn.datatables.net/2.0.8/css/dataTables.tailwindcss.min.css">
-        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
         <script type="text/javascript" src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ config('services.midtrans.client_key') }}"></script>
 
     </head>
@@ -61,6 +75,7 @@
         @include('layouts.partials.footer')
         
         <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
         <script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
         <script src="https://cdn.datatables.net/2.0.8/js/dataTables.tailwindcss.min.js"></script>

@@ -5,7 +5,7 @@
         </div>
     @endif
     
-    <div class="space-y-6 max-w-4xl">
+    <div class="space-y-6 max-w-4xl mx-auto">
         {{-- Informasi Dasar --}}
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -21,9 +21,17 @@
             <label for="description" class="block text-sm font-medium text-gray-700">Deskripsi Singkat</label>
             <input type="text" name="description" id="description" value="{{ old('description', $plan->description) }}" class="mt-1 block w-full">
         </div>
-        <div>
-            <label for="features_text" class="block text-sm font-medium text-gray-700">Fitur (satu per baris)*</label>
-            <textarea name="features_text" id="features_text" rows="5" class="mt-1 block w-full" required>{{ old('features_text', is_array($plan->features) ? implode("\n", $plan->features) : '') }}</textarea>
+       <div class="border-t pt-6">
+            <h3 class="text-lg font-medium">Fitur yang Termasuk</h3>
+            <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                @foreach($features as $feature)
+                    <label class="flex items-center">
+                        <input type="checkbox" name="feature_ids[]" value="{{ $feature->id }}" class="rounded"
+                            @if(in_array($feature->id, old('feature_ids', ($plan->exists && $plan->features) ? $plan->features->pluck('id')->toArray() : []))) checked @endif>
+                        <span class="ms-2 text-sm">{{ $feature->name }}</span>
+                    </label>
+                @endforeach
+            </div>
         </div>
 
         {{-- Tingkatan Harga (Tiers) --}}

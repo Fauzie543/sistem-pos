@@ -26,47 +26,10 @@
         </div>
     </div>
 
-    {{-- Layout untuk Grafik dan Tabel --}}
-    <div class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-        {{-- Tambahkan flex-col agar div di dalamnya bisa tumbuh --}}
-        <div class="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex flex-col">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Tren Penjualan 7 Hari Terakhir</h3>
-            
-            {{-- =============================================== --}}
-            {{-- PERUBAHAN DI SINI --}}
-            {{-- =============================================== --}}
-            {{-- 1. Tambahkan div pembungkus dengan kelas 'relative' dan 'flex-grow' --}}
-            <div class="relative flex-grow">
-                {{-- 2. Hapus style height dari canvas --}}
-                <canvas id="salesChart"></canvas>
-            </div>
-            
-        </div>
-
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-            {{-- ... (kode aktivitas terkini tidak berubah) ... --}}
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Aktivitas Terkini</h3>
-            <div class="space-y-4">
-                @forelse($recentSales as $sale)
-                    <div class="flex justify-between items-center text-sm">
-                        <div>
-                            <p class="font-semibold text-gray-800 dark:text-gray-200">{{ $sale->customer->name }}</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ $sale->created_at->diffForHumans() }}</p>
-                        </div>
-                        <span class="font-bold text-gray-900 dark:text-white">Rp {{ number_format($sale->total_amount, 0, ',', '.') }}</span>
-                    </div>
-                @empty
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Belum ada transaksi.</p>
-                @endforelse
-            </div>
-        </div>
-    </div>
-
-    {{-- ... (sisa kode dashboard Anda tidak berubah) ... --}}
+    {{-- Baris Ketiga: Produk & Jasa/Kategori Terlaris --}}
     <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Produk Terlaris (Bulan Ini)</h3>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Produk/Menu Terlaris (Bulan Ini)</h3>
             <ul class="space-y-2">
                 @forelse($topProducts as $item)
                     <li class="flex justify-between text-sm">
@@ -78,10 +41,17 @@
                 @endforelse
             </ul>
         </div>
+        
+        {{-- =============================================== --}}
+        {{-- KARTU KONDISIONAL DI SINI --}}
+        {{-- =============================================== --}}
+
+        {{-- Jika fitur 'services' aktif, tampilkan Jasa Terlaris --}}
+        @if(auth()->user()->company->featureEnabled('service_management'))
         <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Jasa Terlaris (Bulan Ini)</h3>
             <ul class="space-y-2">
-                 @forelse($topServices as $item)
+                @forelse($topServices as $item)
                     <li class="flex justify-between text-sm">
                         <span class="text-gray-700 dark:text-gray-300">{{ $item->service->name ?? 'Jasa Dihapus' }}</span>
                         <span class="font-bold text-gray-900 dark:text-white">{{ $item->total_used }} kali</span>
@@ -91,6 +61,23 @@
                 @endforelse
             </ul>
         </div>
+        {{-- Jika tidak, tampilkan Kategori Terlaris --}}
+        @else
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Kategori Terlaris (Bulan Ini)</h3>
+            <ul class="space-y-2">
+                @forelse($topCategories as $categoryName => $total)
+                    <li class="flex justify-between text-sm">
+                        <span class="text-gray-700 dark:text-gray-300">{{ $categoryName ?: 'Tanpa Kategori' }}</span>
+                        <span class="font-bold text-gray-900 dark:text-white">{{ $total }} terjual</span>
+                    </li>
+                @empty
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Belum ada penjualan berdasarkan kategori.</p>
+                @endforelse
+            </ul>
+        </div>
+        @endif
+
     </div>
 @endsection
 

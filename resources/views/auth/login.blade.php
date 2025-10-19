@@ -47,4 +47,10 @@
             </x-primary-button>
         </div>
     </form>
+    <div class="text-center mt-4">
+        <span class="text-sm text-gray-600">{{ __("Belum punya akun?") }}</span>
+        <a class="underline text-sm text-blue-600 hover:text-blue-800 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ms-1" href="{{ route('register') }}">
+            {{ __('Daftar di sini') }}
+        </a>
+    </div>
 </x-guest-layout>

@@ -3,11 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
-use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleDetail;
-use App\Models\Service;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
@@ -16,19 +13,37 @@ class DashboardController extends Controller
 {
     public function index(): View
     {
-        // Data user yang login
-        $user = Auth::user()->load('role');
+        // Data user dan company yang login
+        $user = Auth::user();
+        $company = $user->company;
 
-        // ====== CARD STATISTIK ======
-        $customersThisMonth = Customer::whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count();
-        $totalCustomers = Customer::count();
-        $productsSoldThisMonth = SaleDetail::whereNotNull('product_id')->whereHas('sale', fn($q) => $q->whereMonth('created_at', now()->month))->sum('quantity');
-        $totalProductsSold = SaleDetail::whereNotNull('product_id')->sum('quantity');
-        $revenueThisMonth = Sale::whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->sum('total_amount');
-        $totalRevenue = Sale::sum('total_amount');
+        // Jika karena suatu alasan company tidak ada, tampilkan dashboard kosong
+        if (!$company) {
+            abort(404, 'Company not found for this user.');
+        }
+        $companyId = $company->id; // Ambil ID untuk digunakan di query
 
-        // ====== GRAFIK PENJUALAN 7 HARI TERAKHIR ======
-        $salesData = Sale::where('created_at', '>=', now()->subDays(6))
+        // Tanggal awal dan akhir bulan ini
+        $startOfMonth = now()->startOfMonth();
+        $endOfMonth = now()->endOfMonth();
+
+        // ====== CARD STATISTIK (DENGAN FILTER company_id) ======
+        $customersThisMonth = Customer::where('company_id', $companyId) // <-- FILTER
+            ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
+            ->count();
+
+        $productsSoldThisMonth = SaleDetail::where('company_id', $companyId) // <-- FILTER
+            ->whereNotNull('product_id')
+            ->whereHas('sale', fn($q) => $q->whereBetween('created_at', [$startOfMonth, $endOfMonth]))
+            ->sum('quantity');
+
+        $revenueThisMonth = Sale::where('company_id', $companyId) // <-- FILTER
+            ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
+            ->sum('total_amount');
+
+        // ====== GRAFIK PENJUALAN 7 HARI TERAKHIR (DENGAN FILTER company_id) ======
+        $salesData = Sale::where('company_id', $companyId) // <-- FILTER
+            ->where('created_at', '>=', now()->subDays(6))
             ->groupBy('date')
             ->orderBy('date', 'ASC')
             ->get([
@@ -45,42 +60,58 @@ class DashboardController extends Controller
             $salesChartData[] = $salesData->get($date, 0);
         }
 
-        // ====== PRODUK & JASA TERLARIS (BULAN INI) ======
-        $topProducts = SaleDetail::whereNotNull('product_id')
+        // ====== PRODUK TERLARIS (DENGAN FILTER company_id) ======
+        $topProducts = SaleDetail::where('company_id', $companyId) // <-- FILTER
+            ->whereNotNull('product_id')
             ->with('product')
-            ->whereHas('sale', fn($q) => $q->whereMonth('created_at', now()->month))
+            ->whereHas('sale', fn($q) => $q->whereBetween('created_at', [$startOfMonth, $endOfMonth]))
             ->select('product_id', DB::raw('SUM(quantity) as total_sold'))
             ->groupBy('product_id')
             ->orderByDesc('total_sold')
             ->limit(5)
             ->get();
-
-        $topServices = SaleDetail::whereNotNull('service_id')
-            ->with('service')
-            ->whereHas('sale', fn($q) => $q->whereMonth('created_at', now()->month))
-            ->select('service_id', DB::raw('COUNT(service_id) as total_used'))
-            ->groupBy('service_id')
-            ->orderByDesc('total_used')
-            ->limit(5)
-            ->get();
             
-        // ====== AKTIVITAS TRANSAKSI TERKINI ======
-        $recentSales = Sale::with('customer')->latest()->limit(5)->get();
+        // ====== AKTIVITAS TRANSAKSI TERKINI (DENGAN FILTER company_id) ======
+        $recentSales = Sale::where('company_id', $companyId)->with('customer')->latest()->limit(5)->get(); // <-- FILTER
+
+        // ====== LOGIKA KONDISIONAL BARU (DENGAN FILTER company_id) ======
+        $topServices = collect();
+        $topCategories = collect();
+
+        if ($company->featureEnabled('service_management')) {
+            $topServices = SaleDetail::where('company_id', $companyId) // <-- FILTER
+                ->whereNotNull('service_id')
+                ->with('service')
+                ->whereHas('sale', fn($q) => $q->whereBetween('created_at', [$startOfMonth, $endOfMonth]))
+                ->select('service_id', DB::raw('COUNT(service_id) as total_used'))
+                ->groupBy('service_id')
+                ->orderByDesc('total_used')
+                ->limit(5)
+                ->get();
+        } else {
+            $topCategories = SaleDetail::where('company_id', $companyId) // <-- FILTER
+                ->whereNotNull('product_id')
+                ->with('product.category')
+                ->whereHas('sale', fn($q) => $q->whereBetween('created_at', [$startOfMonth, $endOfMonth]))
+                ->get()
+                ->groupBy('product.category.name')
+                ->map(fn($group) => $group->sum('quantity'))
+                ->sortDesc()
+                ->take(5);
+        }
 
         // Mengirim semua data ke view
         return view('dashboard', [
             'user' => $user,
             'customersThisMonth' => $customersThisMonth,
-            'totalCustomers' => $totalCustomers,
             'productsSoldThisMonth' => $productsSoldThisMonth,
-            'totalProductsSold' => $totalProductsSold,
             'revenueThisMonth' => $revenueThisMonth,
-            'totalRevenue' => $totalRevenue,
             'chartLabels' => $dates,
             'chartData' => $salesChartData,
             'topProducts' => $topProducts,
-            'topServices' => $topServices,
             'recentSales' => $recentSales,
+            'topServices' => $topServices,
+            'topCategories' => $topCategories,
         ]);
     }
 }

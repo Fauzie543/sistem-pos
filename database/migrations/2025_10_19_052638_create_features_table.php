@@ -11,13 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('plans', function (Blueprint $table) {
+        Schema::create('features', function (Blueprint $table) {
             $table->id();
-            $table->string('key')->unique(); // 'bengkel', 'cafe'
-            $table->string('name'); // 'POS Bengkel', 'POS F&B'
+            $table->string('key')->unique(); // 'services', 'purchases'
+            $table->string('name'); // 'Manajemen Jasa', 'Manajemen Pembelian'
             $table->text('description')->nullable();
-            $table->boolean('is_active')->default(true);
-            $table->timestamps();
         });
     }
 
@@ -26,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('plans');
+        Schema::dropIfExists('features');
     }
 };

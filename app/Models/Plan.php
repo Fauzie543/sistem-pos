@@ -6,10 +6,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Plan extends Model
 {
     use HasFactory;
-    protected $fillable = ['key', 'name', 'description', 'features', 'is_active'];
-    protected $casts = ['features' => 'array', 'is_active' => 'boolean'];
+    protected $fillable = ['key', 'name', 'description', 'is_active'];
+    protected $casts = ['is_active' => 'boolean'];
 
     public function tiers() {
         return $this->hasMany(PlanTier::class);
+    }
+    public function features() {
+        return $this->belongsToMany(Feature::class);
     }
 }
