@@ -109,12 +109,16 @@
                         <div>
                             <label for="latitude" class="block text-sm font-medium text-gray-700">Latitude</label>
                             <input type="text" name="latitude" id="latitude" value="{{ old('latitude', $company->latitude ?? '') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                            <button type="button" id="getLocationBtn" class="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded flex items-center gap-2">
+                                <i class="fa fa-map-marker-alt"></i> Ambil
+                            </button>
                         </div>
                         <div>
                             <label for="longitude" class="block text-sm font-medium text-gray-700">Longitude</label>
                             <input type="text" name="longitude" id="longitude" value="{{ old('longitude', $company->longitude ?? '') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                         </div>
                     </div>
+                    
 
                     {{-- Baris 4: WiFi --}}
                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -153,24 +157,64 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    $(function() {
-        $('#editCompanyBtn').on('click', function() {
-            $('#companyModal').removeClass('hidden');
-        });
-
-        $('.close-modal').on('click', function() {
-            $('#companyModal').addClass('hidden');
-        });
-        @if (session('success'))
-            Swal.fire({
-                toast: true,
-                position: 'top-end',
-                icon: 'success',
-                title: '{{ session('success') }}',
-                showConfirmButton: false,
-                timer: 3000
-            });
-        @endif
+$(function() {
+    // Tombol buka modal
+    $('#editCompanyBtn').on('click', function() {
+        $('#companyModal').removeClass('hidden');
     });
+
+    // Tutup modal
+    $('.close-modal').on('click', function() {
+        $('#companyModal').addClass('hidden');
+    });
+
+    // Ambil lokasi otomatis
+    $('#getLocationBtn').on('click', function() {
+        if (navigator.geolocation) {
+            Swal.fire({
+                title: 'Mengambil lokasi...',
+                text: 'Mohon tunggu sebentar',
+                didOpen: () => Swal.showLoading(),
+                allowOutsideClick: false
+            });
+            
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    $('#latitude').val(position.coords.latitude.toFixed(6));
+                    $('#longitude').val(position.coords.longitude.toFixed(6));
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Lokasi berhasil diambil!',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                },
+                function(error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal mendapatkan lokasi',
+                        text: error.message
+                    });
+                }
+            );
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Browser tidak mendukung Geolocation'
+            });
+        }
+    });
+
+    @if (session('success'))
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: '{{ session('success') }}',
+            showConfirmButton: false,
+            timer: 3000
+        });
+    @endif
+});
 </script>
 @endpush

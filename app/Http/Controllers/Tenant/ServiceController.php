@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Controller;
 use App\Models\Service;
 use App\Models\Category;
 use Illuminate\Http\Request;
@@ -12,15 +13,22 @@ class ServiceController extends Controller
 {
     public function index()
     {
-        // Ambil data kategori untuk dropdown di modal
-        $categories = Category::orderBy('name')->get();
+        $companyId = auth()->user()->company_id;
+
+        $categories = Category::where('company_id', $companyId)
+            ->orderBy('name')
+            ->get();
+
         return view('services.index', compact('categories'));
     }
 
     public function data()
     {
-        // Ambil data jasa dengan relasi kategori
-        $services = Service::with('category')->select('services.*');
+        $companyId = auth()->user()->company_id;
+
+        $services = Service::with('category')
+            ->where('company_id', $companyId)
+            ->select('services.*');
 
         return DataTables::of($services)
             ->addIndexColumn()
@@ -29,8 +37,10 @@ class ServiceController extends Controller
             ->addColumn('action', function ($service) {
                 $deleteUrl = route('services.destroy', $service->id);
                 return '
-                    <a href="javascript:void(0)" data-id="' . $service->id . '" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded text-xs edit-btn">Edit</a>
-                    <a href="javascript:void(0)" data-url="' . $deleteUrl . '" class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-xs delete-btn ml-2">Delete</a>
+                    <a href="javascript:void(0)" data-id="' . $service->id . '" 
+                       class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded text-xs edit-btn">Edit</a>
+                    <a href="javascript:void(0)" data-url="' . $deleteUrl . '" 
+                       class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-xs delete-btn ml-2">Delete</a>
                 ';
             })
             ->rawColumns(['action'])

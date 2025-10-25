@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('company_id')->constrained()->onDelete('cascade');
+            $table->index('company_id');
             $table->foreignId('plan_tier_id')->constrained()->onDelete('cascade');
             $table->string('order_id')->unique(); // Order ID dari Midtrans
             $table->integer('amount');

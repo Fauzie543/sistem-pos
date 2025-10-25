@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('unit')->comment('e.g., pcs, liter, set');
             $table->string('storage_location')->nullable();
             $table->foreignId('company_id')->constrained('companies')->onDelete('cascade');
+            $table->index('company_id');
             $table->softDeletes();
             $table->timestamps();
         });

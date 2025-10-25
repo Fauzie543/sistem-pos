@@ -49,6 +49,15 @@ $(function () {
         ],
         dom: '<"flex justify-between items-center mb-4"lf>rt<"flex justify-between items-center mt-4"ip>'
     });
+    table.on('processing.dt', function (e, settings, processing) {
+        if (processing) {
+            $('#skeleton-loader').show();     // tampilkan skeleton
+            $('#categories-table').addClass('hidden');
+        } else {
+            $('#skeleton-loader').hide();     // sembunyikan skeleton
+            $('#categories-table').removeClass('hidden');
+        }
+    });
 
     // ## 2. Logika Buka Modal (Tambah Data)
     $('#addCategoryBtn').on('click', function () {

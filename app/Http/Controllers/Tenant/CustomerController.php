@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -23,8 +24,12 @@ class CustomerController extends Controller
             ->addColumn('action', function ($customer) {
                 $vehiclesUrl = route('customers.vehicles.index', $customer->id);
                 $deleteUrl = route('customers.destroy', $customer->id);
+                // return '
+                //     <a href="'.$vehiclesUrl.'" class="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-2 rounded text-xs">Kendaraan</a>
+                //     <a href="javascript:void(0)" data-id="' . $customer->id . '" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded text-xs edit-btn ml-2">Edit</a>
+                //     <a href="javascript:void(0)" data-url="' . $deleteUrl . '" class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-xs delete-btn ml-2">Delete</a>
+                // ';
                 return '
-                    <a href="'.$vehiclesUrl.'" class="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-2 rounded text-xs">Kendaraan</a>
                     <a href="javascript:void(0)" data-id="' . $customer->id . '" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded text-xs edit-btn ml-2">Edit</a>
                     <a href="javascript:void(0)" data-url="' . $deleteUrl . '" class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-xs delete-btn ml-2">Delete</a>
                 ';

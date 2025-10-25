@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
@@ -12,15 +13,22 @@ class ProductController extends Controller
 {
     public function index()
     {
-        // Ambil data kategori untuk dikirim ke modal form
-        $categories = Category::orderBy('name')->get();
+        $companyId = auth()->user()->company_id;
+
+        $categories = Category::where('company_id', $companyId)
+            ->orderBy('name')
+            ->get();
+
         return view('products.index', compact('categories'));
     }
 
     public function data()
     {
-        // Ambil data produk dengan relasi kategori
-        $products = Product::with('category')->select('products.*');
+        $companyId = auth()->user()->company_id;
+
+        $products = Product::with('category')
+            ->where('company_id', $companyId)
+            ->select('products.*');
 
         return DataTables::of($products)
             ->addIndexColumn()

@@ -1,22 +1,25 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\SaleController;
-use App\Http\Controllers\CompanyController;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\ServiceController;
-use App\Http\Controllers\VehicleController;
-use App\Http\Controllers\CategoryController;
-use App\Http\Controllers\CustomerController;
-use App\Http\Controllers\PurchaseController;
-use App\Http\Controllers\SupplierController;
-use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\BillingController;
-use App\Http\Controllers\Settings\PaymentGatewayController;
-use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
+use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Tenant\SaleController;
+use App\Http\Controllers\SupportTicketController;
+use App\Http\Controllers\Tenant\BillingController;
+use App\Http\Controllers\Tenant\ProductController;
+use App\Http\Controllers\Tenant\ServiceController;
+use App\Http\Controllers\Tenant\VehicleController;
 use App\Http\Controllers\SuperAdmin\PlanController;
+use App\Http\Controllers\Tenant\CategoryController;
+use App\Http\Controllers\Tenant\CustomerController;
+use App\Http\Controllers\Tenant\PurchaseController;
+use App\Http\Controllers\Tenant\SupplierController;
+use App\Http\Controllers\SuperAdmin\SystemController;
+use App\Http\Controllers\Settings\PaymentGatewayController;
+use App\Http\Controllers\SuperAdmin\SupportTicketController as AdminSupportController;
+use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -37,10 +40,35 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::middleware('role:superadmin')->prefix('superadmin')->name('superadmin.')->group(function () {
         Route::resource('plans', PlanController::class);
+        Route::prefix('support')
+            ->name('support.')
+            ->group(function () {
+                Route::get('/', [AdminSupportController::class, 'index'])->name('index');
+                Route::get('/{ticket}', [AdminSupportController::class, 'show'])->name('show');
+                Route::post('/{ticket}/reply', [AdminSupportController::class, 'reply'])->name('reply');
+                Route::post('/{ticket}/resolve', [AdminSupportController::class, 'resolve'])->name('resolve');
+            });
+        Route::prefix('system')
+            ->name('system.')
+            ->group(function () {
+                Route::get('/', [SystemController::class, 'index'])->name('index');
+                Route::post('/clear-cache', [SystemController::class, 'clearCache'])->name('clearCache');
+                Route::post('/clear-log', [SystemController::class, 'clearLog'])->name('clearLog');
+                Route::get('status', [SystemController::class, 'status'])->name('status');
+            });
     });
 
     Route::get('/billing', [BillingController::class, 'index'])->name('billing.index');
     Route::post('/subscribe', [BillingController::class, 'processSubscription'])->name('subscribe.checkout');
+    
+    Route::prefix('support')
+    ->name('support.')
+    ->group(function () {
+        Route::post('/tickets', [SupportTicketController::class, 'store'])->name('store');
+        Route::post('/{ticket}/reply', [SupportTicketController::class, 'reply'])->name('reply');
+        Route::get('/{ticket}/replies', [SupportTicketController::class, 'replies'])->name('replies');
+    });
+
     
     Route::middleware('subscribed')->group(function() {
 
@@ -134,6 +162,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/data', [SaleController::class, 'historyData'])->name('history.data');
             Route::get('/{sale}', [SaleController::class, 'show'])->name('history.show');
             Route::get('/{sale}/receipt', [SaleController::class, 'showReceipt'])->name('history.receipt');
+            Route::get('/{sale}/print', [SaleController::class, 'print'])->name('print');
+            Route::get('/export/excel', [SaleController::class, 'exportExcel'])->name('export.excel');
+
         });
 
         Route::prefix('users')->name('users.')->group(function () {

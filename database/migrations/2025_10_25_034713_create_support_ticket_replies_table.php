@@ -11,13 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('categories', function (Blueprint $table) {
+        Schema::create('support_ticket_replies', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->unique();
-            $table->text('description')->nullable();
-            $table->foreignId('company_id')->constrained('companies')->onDelete('cascade');
-            $table->index('company_id');
-            $table->softDeletes();
+            $table->foreignId('support_ticket_id')->constrained('support_tickets')->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->text('message');
             $table->timestamps();
         });
     }
@@ -27,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('categories');
+        Schema::dropIfExists('support_ticket_replies');
     }
 };

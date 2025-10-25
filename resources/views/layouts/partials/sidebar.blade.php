@@ -37,6 +37,33 @@
                         <span class="sidebar-text flex-1 ms-3">Manajemen Paket</span>
                     </a>
                 </li>
+                <li>
+                    <a href="{{ route('superadmin.support.index') }}" 
+                    class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group {{ request()->routeIs('superadmin.support.*') ? 'bg-gray-100 dark:bg-gray-700' : '' }}">
+                        <svg class="w-6 h-6 text-gray-800 dark:text-white" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2a10 10 0 1 0 6.32 17.66L22 22l-2-5.68A10 10 0 0 0 12 2Zm0 2a8 8 0 0 1 0 16c-1.85 0-3.55-.63-4.9-1.69L7 19l-.69-.9C5.63 16.55 5 14.85 5 13a8 8 0 0 1 7-7.93V7a1 1 0 0 0 2 0V4.07A8 8 0 0 1 19 13c0 1.85-.63 3.55-1.69 4.9L17 19l-.9-.69A8 8 0 0 1 12 4Z"/>
+                            <circle cx="12" cy="11" r="1.5"/>
+                            <path d="M12 13a1 1 0 0 0-1 1v1h2v-1a1 1 0 0 0-1-1Z"/>
+                        </svg>
+                        <span class="sidebar-text flex-1 ms-3 whitespace-nowrap">Tiket Bantuan</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('superadmin.system.index') }}" 
+                    class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white 
+                            hover:bg-gray-100 dark:hover:bg-gray-700 group 
+                            {{ request()->routeIs('system.*') ? 'bg-gray-100 dark:bg-gray-700' : '' }}">
+                        <svg class="w-6 h-6 text-gray-800 dark:text-white" 
+                            xmlns="http://www.w3.org/2000/svg" 
+                            fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" 
+                                d="M4 7h16M4 12h16M4 17h16M9 3h6M9 21h6"/>
+                        </svg>
+                        <span class="sidebar-text flex-1 ms-3 whitespace-nowrap">
+                            System Health
+                        </span>
+                    </a>
+                </li>
 
             {{-- =============================================== --}}
             {{-- BLOK KHUSUS UNTUK KASIR --}}

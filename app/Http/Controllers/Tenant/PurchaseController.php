@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Controller;
 use App\Models\Purchase;
 use App\Models\Supplier;
 use App\Models\Product;
@@ -100,6 +101,7 @@ class PurchaseController extends Controller
                     'quantity' => $productData['quantity'],
                     'price' => $productData['price'],
                     'subtotal' => $productData['quantity'] * $productData['price'],
+                    'company_id' => $companyId,
                 ]);
 
                 // Update stok di tabel 'products'

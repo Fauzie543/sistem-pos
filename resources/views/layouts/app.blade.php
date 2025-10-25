@@ -31,6 +31,7 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
         <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" referrerpolicy="no-referrer" />
         @vite(['resources/css/app.css'])
         <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdn.datatables.net/2.0.8/css/dataTables.tailwindcss.min.css">
@@ -69,10 +70,10 @@
                     </header>
                     @yield('content')
                 </div>
-
+                @include('layouts.partials.footer')
             </main>
         </div>
-        @include('layouts.partials.footer')
+        
         
         <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -115,6 +116,7 @@
                 }
             });
         </script>
+        @includeWhen(auth()->check() && auth()->user()->role->name !== 'superadmin', 'layouts.partials.support')
         @stack('scripts')
     </body>
 </html>

@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('model');
             $table->string('year', 4);
             $table->foreignId('company_id')->constrained('companies')->onDelete('cascade');
+            $table->index('company_id');
             $table->softDeletes();
             $table->timestamps();
         });

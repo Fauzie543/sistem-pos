@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -20,7 +21,9 @@ class CategoryController extends Controller
 
     public function data()
     {
-        $categories = Category::query();
+        $companyId = auth()->user()->company_id;
+
+        $categories = Category::where('company_id', $companyId);
 
         return DataTables::of($categories)
             ->addIndexColumn()

@@ -25,6 +25,12 @@
             </p>
         </div>
     </div>
+    <div class="mt-8 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Grafik Pendapatan (6 Bulan Terakhir)</h3>
+        <div style="height: 300px;">
+            <canvas id="salesChart"></canvas>
+        </div>
+    </div>
 
     {{-- Baris Ketiga: Produk & Jasa/Kategori Terlaris --}}
     <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -77,7 +83,6 @@
             </ul>
         </div>
         @endif
-
     </div>
 @endsection
 

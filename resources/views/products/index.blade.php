@@ -53,6 +53,30 @@ $(function () {
         dom: '<"flex justify-between items-center mb-4"lf>rt<"flex justify-between items-center mt-4"ip>'
     });
 
+    const rupiahFormatter = new Intl.NumberFormat('id-ID');
+
+    function formatRupiahInput(selector) {
+        $(document).on('input', selector, function(e) {
+            let value = e.target.value.replace(/[^\d]/g, ''); // hanya angka
+            if (value) {
+                $(this).val(rupiahFormatter.format(value));
+            } else {
+                $(this).val('');
+            }
+        });
+    }
+
+    // Terapkan ke dua input harga
+    formatRupiahInput('#purchase_price');
+    formatRupiahInput('#selling_price');
+
+    // Saat form disubmit, ubah ke angka murni tanpa titik/koma
+    $('#productForm').on('submit', function() {
+        $('#purchase_price, #selling_price').each(function() {
+            $(this).val($(this).val().replace(/\./g, '').replace(/,/g, ''));
+        });
+    });
+
     $('#addProductBtn').on('click', function () {
         $('#productForm')[0].reset();
         $('.error-message').text('');

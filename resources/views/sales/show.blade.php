@@ -3,36 +3,98 @@
 @section('header', 'Detail Penjualan: ' . $sale->invoice_number)
 
 @push('styles')
-{{-- Style ini akan menyembunyikan elemen yang tidak perlu saat halaman dicetak --}}
 <style>
-    @media print {
-        body * {
-            visibility: hidden;
-        }
-        #print-area, #print-area * {
-            visibility: visible;
-        }
-        #print-area {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-        }
-        .no-print {
-            display: none;
-        }
+@media print {
+    /* --- Reset semua layout bawaan dashboard --- */
+    html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
     }
+
+    /* Sembunyikan SEMUA elemen luar dari #print-area */
+    body * {
+        display: none !important;
+    }
+
+    /* Tampilkan hanya struk */
+    #print-area, #print-area * {
+        display: block !important;
+        visibility: visible !important;
+    }
+
+    /* Pastikan struk tidak terpengaruh grid layout */
+    #print-area {
+        position: static !important;
+        margin: 0 auto !important;
+        width: 80mm !important; /* Ukuran nota thermal 80mm */
+        padding: 0 !important;
+        background: #fff !important;
+        box-shadow: none !important;
+    }
+
+    /* Hilangkan background Tailwind */
+    .bg-gray-50, .bg-gray-100, .bg-gray-200, .bg-gray-300, .bg-white {
+        background: #fff !important;
+    }
+
+    /* Atur teks & tabel */
+    body, table {
+        font-size: 12px !important;
+        color: #000 !important;
+        line-height: 1.3;
+    }
+
+    table {
+        border-collapse: collapse !important;
+        width: 100% !important;
+    }
+
+    th, td {
+        border: none !important;
+        padding: 4px 6px !important;
+        text-align: left;
+    }
+
+    /* Header */
+    h2, h3, .text-lg, .text-xl {
+        font-size: 14px !important;
+        margin: 0 0 4px 0 !important;
+    }
+
+    /* Nonaktifkan tombol */
+    .no-print {
+        display: none !important;
+    }
+
+    /* Hilangkan margin default printer */
+    @page {
+        margin: 0;
+    }
+}
 </style>
 @endpush
+
+
 
 @section('content')
 <div id="print-area" class="bg-white p-6 rounded-md shadow-sm">
     {{-- Header Struk --}}
     <div class="flex justify-between items-start border-b pb-4 mb-4">
         <div>
-            <h2 class="text-2xl font-bold">{{ config('app.name', 'BengkelPOS') }}</h2>
-            <p class="text-sm text-gray-600">Jl. Teknik Kimia, Surabaya, Indonesia</p>
-            <p class="text-sm text-gray-600">telepon: (031) 123-4567</p>
+            <h2 class="text-2xl font-bold">{{ $company->name ?? config('app.name', 'BengkelPOS') }}</h2>
+
+            @if(!empty($company->address))
+                <p class="text-sm text-gray-600">{{ $company->address }}</p>
+            @endif
+
+            @if(!empty($company->phone))
+                <p class="text-sm text-gray-600">Telepon: {{ $company->phone }}</p>
+            @endif
+
+            @if(!empty($company->email))
+                <p class="text-sm text-gray-600">Email: {{ $company->email }}</p>
+            @endif
         </div>
         <div class="text-right">
             <h3 class="text-xl font-semibold">INVOICE</h3>
@@ -49,12 +111,6 @@
             <p class="text-sm">{{ $sale->customer->phone_number }}</p>
         </div>
         <div>
-            <h3 class="font-semibold text-gray-800">Kendaraan:</h3>
-            @if($sale->vehicle)
-                <p class="text-sm">{{ $sale->vehicle->license_plate }} ({{ $sale->vehicle->brand }} {{ $sale->vehicle->model }})</p>
-            @else
-                <p class="text-sm">-</p>
-            @endif
         </div>
         <div>
             <h3 class="font-semibold text-gray-800">Kasir:</h3>
@@ -79,7 +135,6 @@
                 <tr class="border-b">
                     <td class="py-2 px-4">
                         {{ $detail->product->name ?? $detail->service->name }}
-                        <span class="text-xs text-gray-500">{{ $detail->product ? '[P]' : '[J]' }}</span>
                     </td>
                     <td class="text-center py-2 px-4">{{ $detail->quantity }}</td>
                     <td class="text-right py-2 px-4">Rp {{ number_format($detail->price, 0, ',', '.') }}</td>
@@ -102,7 +157,7 @@
     
     {{-- Footer Struk --}}
     <div class="text-center mt-8 text-sm text-gray-600">
-        <p>Terima kasih telah melakukan servis di bengkel kami.</p>
+        <p>Terima kasih telah melakukan pembelian  kami.</p>
         <p>Barang yang sudah dibeli tidak dapat dikembalikan.</p>
     </div>
 
@@ -113,8 +168,45 @@
     <a href="{{ route('sales.history.index') }}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded mr-2">
         &larr; Kembali ke Riwayat
     </a>
-    <button onclick="window.print()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-        Cetak Struk
-    </button>
+    <a href="{{ route('sales.print', $sale->id) }}"  id="btnPrint" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+    Cetak Struk
+    </a>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.getElementById('btnPrint').addEventListener('click', function (e) {
+    e.preventDefault(); // cegah pindah halaman
+
+    const url = this.getAttribute('href');
+
+    fetch(url)
+        .then(res => res.text())
+        .then(html => {
+            // buat iframe tersembunyi untuk print
+            const iframe = document.createElement('iframe');
+            iframe.style.position = 'fixed';
+            iframe.style.width = '0';
+            iframe.style.height = '0';
+            iframe.style.border = 'none';
+            document.body.appendChild(iframe);
+
+            // tulis HTML print ke dalam iframe
+            iframe.contentDocument.open();
+            iframe.contentDocument.write(html);
+            iframe.contentDocument.close();
+
+            // tunggu sebentar agar CSS termuat, lalu print
+            iframe.onload = function () {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+
+                // hapus iframe setelah print
+                setTimeout(() => iframe.remove(), 1000);
+            };
+        })
+        .catch(err => console.error('Gagal memuat halaman print:', err));
+});
+</script>
+@endpush

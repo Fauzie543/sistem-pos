@@ -20,6 +20,7 @@ return new class extends Migration
             $table->decimal('price', 15, 2);
             $table->decimal('subtotal', 15, 2);
             $table->foreignId('company_id')->constrained('companies')->onDelete('cascade');
+            $table->index('company_id');
             $table->softDeletes();
             $table->timestamps();
         });

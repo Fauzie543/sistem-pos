@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('payment_method');
             $table->enum('status', ['lunas', 'belum bayar'])->default('lunas');
             $table->foreignId('company_id')->constrained('companies')->onDelete('cascade');
+            $table->index('company_id');
             $table->softDeletes();
             $table->timestamps();
         });

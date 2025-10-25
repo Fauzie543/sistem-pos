@@ -8,12 +8,7 @@
         Tambah Pembelian
     </a>
 
-    @if (session('success'))
-        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
-            <span class="block sm:inline">{{ session('success') }}</span>
-        </div>
-    @endif
-
+    {{-- Tempat DataTables --}}
     <table id="purchases-table" class="w-full">
         <thead>
             <tr>
@@ -30,9 +25,13 @@
 @endsection
 
 @push('scripts')
+{{-- ✅ Tambahkan SweetAlert2 --}}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
 $(function () {
-    $('#purchases-table').DataTable({
+    // === Inisialisasi DataTables ===
+    let table = $('#purchases-table').DataTable({
         processing: true,
         serverSide: true,
         ajax: '{{ route('purchases.data') }}',
@@ -45,8 +44,28 @@ $(function () {
             { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center' }
         ],
         dom: '<"flex justify-between items-center mb-4"lf>rt<"flex justify-between items-center mt-4"ip>'
-        
     });
+
+    // === Tampilkan alert sukses setelah redirect (Laravel session) ===
+    @if (session('success'))
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: "{{ session('success') }}",
+            showConfirmButton: false,
+            timer: 3000
+        });
+    @endif
+
+    // === Tampilkan alert error jika ada (misalnya gagal create purchase) ===
+    @if (session('error'))
+        Swal.fire({
+            icon: 'error',
+            title: 'Oops...',
+            text: "{{ session('error') }}"
+        });
+    @endif
 });
 </script>
 @endpush

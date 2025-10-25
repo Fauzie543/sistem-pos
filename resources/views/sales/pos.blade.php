@@ -443,11 +443,29 @@ $(function() {
         const button = $(this);
 
         if (!customer) {
-            Swal.fire('Error', 'Silakan pilih pelanggan terlebih dahulu.', 'error');
+            Swal.fire({
+                    title: 'Error!',
+                    text: 'Silakan pilih pelanggan terlebih dahulu.',
+                    icon: 'error',
+                    confirmButtonText: 'Tutup',
+                    customClass: {
+                        confirmButton: 'bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded',
+                    },
+                    buttonsStyling: false
+                });
             return;
         }
         if (cart.length === 0) {
-            Swal.fire('Error', 'Keranjang tidak boleh kosong.', 'error');
+            Swal.fire({
+                    title: 'Error!',
+                    text: 'Keranjang tidak boleh kosong.',
+                    icon: 'error',
+                    confirmButtonText: 'Tutup',
+                    customClass: {
+                        confirmButton: 'bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded',
+                    },
+                    buttonsStyling: false
+                });
             return;
         }
 
@@ -602,7 +620,16 @@ $(function() {
                 });
             },
             error: function(xhr) {
-                Swal.fire('Error!', xhr.responseJSON.error || 'Terjadi kesalahan.', 'error');
+                 Swal.fire({
+                    title: 'Error!',
+                    text: xhr.responseJSON?.error || 'Terjadi kesalahan.',
+                    icon: 'error',
+                    confirmButtonText: 'Tutup',
+                    customClass: {
+                        confirmButton: 'bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded',
+                    },
+                    buttonsStyling: false
+                });
                 $('#process_sale').prop('disabled', false).text('Bayar');
             }
         });

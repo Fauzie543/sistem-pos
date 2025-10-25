@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Category;
 use App\Models\Product;
@@ -17,6 +18,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Yajra\DataTables\Facades\DataTables;
+use App\Exports\SalesExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class SaleController extends Controller
 {
@@ -149,12 +152,25 @@ class SaleController extends Controller
 
     public function historyData()
     {
-        $sales = Sale::with(['customer', 'user'])->select('sales.*');
+        $companyId = auth()->user()->company_id;
+
+        // ✅ Eager load relasi customer dan user
+        $sales = Sale::with(['customer:id,name', 'user:id,name'])
+            ->where('company_id', $companyId)
+            ->select('sales.*');
+
         return DataTables::of($sales)
             ->addIndexColumn()
             ->editColumn('created_at', fn($s) => $s->created_at->format('d F Y H:i'))
+            ->editColumn('customer.name', fn($s) => $s->customer->name ?? '-')
+            ->editColumn('user.name', fn($s) => $s->user->name ?? '-')
             ->editColumn('total_amount', fn($s) => 'Rp ' . number_format($s->total_amount, 0, ',', '.'))
-            ->addColumn('action', fn($s) => '<a href="'.route('sales.history.show', $s->id).'" class="bg-blue-500 text-white font-bold py-1 px-2 rounded text-xs">View Details</a>')
+            ->addColumn('action', fn($s) =>
+                '<a href="' . route('sales.history.show', $s->id) . '" 
+                class="bg-blue-500 text-white font-bold py-1 px-2 rounded text-xs">
+                View Details
+                </a>'
+            )
             ->rawColumns(['action'])
             ->make(true);
     }
@@ -162,7 +178,17 @@ class SaleController extends Controller
     public function show(Sale $sale)
     {
         $sale->load(['customer', 'user', 'vehicle', 'details.product', 'details.service']);
-        return view('sales.show', compact('sale'));
+
+        $company = auth()->user()->company; // Ambil company dari tenant aktif
+
+        return view('sales.show', compact('sale', 'company'));
+    }
+    
+    public function print(Sale $sale)
+    {
+        $sale->load(['customer', 'user', 'details.product', 'details.service']);
+        $company = auth()->user()->company; // jika pakai multitenant
+        return view('sales.print', compact('sale', 'company'));
     }
 
     // === ENDPOINT AJAX UNTUK PENCARIAN ===
@@ -261,5 +287,24 @@ class SaleController extends Controller
     {
         $sale->load(['user', 'details.product', 'details.service']);
         return view('sales.receipt', compact('sale'));
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $bulan = $request->get('bulan');
+        $tahun = $request->get('tahun');
+
+        $query = Sale::query()->with(['customer', 'user']);
+
+        if ($bulan) {
+            $query->whereMonth('created_at', $bulan);
+        }
+        if ($tahun) {
+            $query->whereYear('created_at', $tahun);
+        }
+
+        $sales = $query->get();
+
+        return Excel::download(new SalesExport($sales), 'sales-export.xlsx');
     }
 }
