@@ -12,7 +12,7 @@ class Category extends Model
 {
     use HasFactory, SoftDeletes, UsesTenantConnection;
 
-    protected $fillable = ['name', 'description', 'company_id'];
+    protected $fillable = ['name', 'description', 'company_id', 'outlet_id',];
 
     /**
      * Get all of the products for the Category
@@ -28,5 +28,10 @@ class Category extends Model
     public function services(): HasMany
     {
         return $this->hasMany(Service::class);
+    }
+
+    public function outlet()
+    {
+        return $this->belongsTo(Outlet::class);
     }
 }

@@ -23,7 +23,8 @@ class Sale extends Model
         'total_amount',
         'payment_method',
         'status',
-        'company_id'
+        'company_id',
+        'outlet_id',
     ];
 
     public function customer(): BelongsTo
@@ -81,5 +82,9 @@ class Sale extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+    public function outlet()
+    {
+        return $this->belongsTo(Outlet::class);
     }
 }

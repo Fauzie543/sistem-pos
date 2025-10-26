@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Schema;
 
 class RegisteredUserController extends Controller
 {
@@ -60,18 +61,45 @@ class RegisteredUserController extends Controller
                 'role_id' => $adminRole->id,
                 'company_id' => $company->id, // <-- Hubungkan user dengan company
             ]);
+            
+
+            $defaultOutlet = \App\Models\Outlet::create([
+                'company_id' => $company->id,
+                'name' => 'Outlet Utama',
+                'code' => 'OUTLET_' . strtoupper(substr($company->name, 0, 3)) . '_' . str_pad($company->id, 3, '0', STR_PAD_LEFT),
+                'address' => 'Alamat belum diatur',
+                'phone' => '-',
+            ]);
+
+            if (Schema::hasColumn('users', 'outlet_id')) {
+                $user->update(['outlet_id' => $defaultOutlet->id]);
+            }
+
+            $cashierRole = Role::where('name', 'kasir')->first();
+            if ($cashierRole) {
+                User::create([
+                    'name' => 'Kasir ' . $company->name,
+                    'email' => 'kasir.' . strtolower(str_replace(' ', '', $company->name)) . '@example.com',
+                    'password' => Hash::make('kasir123'), // default password bisa ubah di UI nanti
+                    'role_id' => $cashierRole->id,
+                    'company_id' => $company->id,
+                    'outlet_id' => $defaultOutlet->id,
+                ]);
+            }
+
 
             DB::commit();
 
             event(new Registered($user));
 
             Auth::login($user);
+            session(['active_outlet_id' => $defaultOutlet->id]);
 
             return redirect(route('dashboard', absolute: false));
 
         } catch (\Exception $e) {
             DB::rollBack();
-            // Optional: Catat error atau tampilkan pesan error yang lebih spesifik
+            \Log::error('Register failed: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Gagal mendaftar. Silakan coba lagi.')->withInput();
         }
     }

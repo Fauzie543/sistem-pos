@@ -18,7 +18,8 @@ class SaleDetail extends Model
         'quantity',
         'price',
         'subtotal',
-        'company_id'
+        'company_id',
+        'outlet_id',
     ];
 
     public function sale(): BelongsTo
@@ -34,5 +35,9 @@ class SaleDetail extends Model
     public function service(): BelongsTo
     {
         return $this->belongsTo(Service::class);
+    }
+    public function outlet()
+    {
+        return $this->belongsTo(Outlet::class);
     }
 }

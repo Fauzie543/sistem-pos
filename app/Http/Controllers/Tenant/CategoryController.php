@@ -4,16 +4,12 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Yajra\DataTables\Facades\DataTables;
 
 class CategoryController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
         return view('categories.index');
@@ -22,8 +18,13 @@ class CategoryController extends Controller
     public function data()
     {
         $companyId = auth()->user()->company_id;
+        $outletId  = config('app.active_outlet_id'); // ✅ outlet aktif
 
-        $categories = Category::where('company_id', $companyId);
+        $categories = Category::where('company_id', $companyId)
+            ->where(function ($q) use ($outletId) {
+                // tampilkan kategori global (tanpa outlet_id) dan milik outlet aktif
+                $q->whereNull('outlet_id')->orWhere('outlet_id', $outletId);
+            });
 
         return DataTables::of($categories)
             ->addIndexColumn()
@@ -38,74 +39,81 @@ class CategoryController extends Controller
             ->make(true);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $companyId = auth()->user()->company_id;
+        $outletId  = config('app.active_outlet_id'); // ✅ ambil outlet aktif
+
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', Rule::unique('categories')->where('company_id', $companyId)],
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('categories')
+                    ->where('company_id', $companyId)
+                    ->where(function ($q) use ($outletId) {
+                        $q->where('outlet_id', $outletId)->orWhereNull('outlet_id');
+                    }),
+            ],
             'description' => ['nullable', 'string'],
         ]);
+
         $validated['company_id'] = $companyId;
+        $validated['outlet_id'] = $outletId; // ✅ simpan outlet aktif
 
         Category::create($validated);
-        return response()->json(['success' => 'Category created successfully.']);
+
+        return response()->json(['success' => 'Kategori berhasil ditambahkan.']);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(Category $category)
     {
         return response()->json($category);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Category $category)
     {
         $companyId = auth()->user()->company_id;
+        $outletId  = config('app.active_outlet_id'); // ✅ outlet aktif
+
+        // 🔒 Pastikan kategori milik outlet aktif
+        if ($category->outlet_id !== $outletId && $category->outlet_id !== null) {
+            return response()->json(['error' => 'Tidak dapat mengubah kategori dari outlet lain.'], 403);
+        }
 
         $validated = $request->validate([
-            // PERBAIKAN: Rule 'unique' sekarang hanya berlaku di dalam company yang sama
-            'name' => ['required', 'string', 'max:255', Rule::unique('categories')->where('company_id', $companyId)->ignore($category->id)],
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('categories')
+                    ->where('company_id', $companyId)
+                    ->where(function ($q) use ($outletId) {
+                        $q->where('outlet_id', $outletId)->orWhereNull('outlet_id');
+                    })
+                    ->ignore($category->id),
+            ],
             'description' => ['nullable', 'string'],
         ]);
 
         $category->update($validated);
-        return response()->json(['success' => 'Category updated successfully.']);
+
+        return response()->json(['success' => 'Kategori berhasil diperbarui.']);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Category $category)
     {
-        // Pencegahan: jangan hapus kategori jika masih digunakan oleh produk atau jasa.
-        if ($category->products()->exists() || $category->services()->exists()) {
-            return response()->json(['error' => 'Cannot delete category with associated products or services.'], 403);
+        // 🔒 Jangan hapus kategori dari outlet lain
+        $outletId = config('app.active_outlet_id');
+        if ($category->outlet_id !== $outletId && $category->outlet_id !== null) {
+            return response()->json(['error' => 'Tidak dapat menghapus kategori dari outlet lain.'], 403);
         }
 
-        $category->delete(); // Ini akan melakukan soft delete
-        return response()->json(['success' => 'Category has been deleted successfully.']);
+        if ($category->products()->exists() || $category->services()->exists()) {
+            return response()->json(['error' => 'Kategori masih digunakan oleh produk atau layanan.'], 403);
+        }
+
+        $category->delete();
+        return response()->json(['success' => 'Kategori berhasil dihapus.']);
     }
 }

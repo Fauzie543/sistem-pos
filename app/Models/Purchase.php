@@ -20,7 +20,8 @@ class Purchase extends Model
         'purchase_date',
         'total_amount',
         'status',
-        'company_id'
+        'company_id',
+        'outlet_id',
     ];
 
     /**
@@ -45,5 +46,10 @@ class Purchase extends Model
     public function details(): HasMany
     {
         return $this->hasMany(PurchaseDetail::class);
+    }
+
+    public function outlet()
+    {
+        return $this->belongsTo(Outlet::class);
     }
 }

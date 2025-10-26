@@ -14,8 +14,13 @@ class ServiceController extends Controller
     public function index()
     {
         $companyId = auth()->user()->company_id;
+        $outletId  = config('app.active_outlet_id'); // ✅ outlet aktif
 
+        // Ambil kategori yang global atau milik outlet aktif
         $categories = Category::where('company_id', $companyId)
+            ->where(function ($q) use ($outletId) {
+                $q->whereNull('outlet_id')->orWhere('outlet_id', $outletId);
+            })
             ->orderBy('name')
             ->get();
 
@@ -25,9 +30,14 @@ class ServiceController extends Controller
     public function data()
     {
         $companyId = auth()->user()->company_id;
+        $outletId  = config('app.active_outlet_id'); // ✅ outlet aktif
 
+        // Ambil service untuk outlet aktif atau global
         $services = Service::with('category')
             ->where('company_id', $companyId)
+            ->where(function ($q) use ($outletId) {
+                $q->whereNull('outlet_id')->orWhere('outlet_id', $outletId);
+            })
             ->select('services.*');
 
         return DataTables::of($services)
@@ -49,10 +59,16 @@ class ServiceController extends Controller
 
     public function store(Request $request)
     {
+        $companyId = auth()->user()->company_id;
+        $outletId  = config('app.active_outlet_id');
+
         $validated = $this->validateService($request);
-        $validated['company_id'] = auth()->user()->company_id;
+        $validated['company_id'] = $companyId;
+        $validated['outlet_id']  = $outletId; // ✅ simpan outlet aktif
+
         Service::create($validated);
-        return response()->json(['success' => 'Service created successfully.']);
+
+        return response()->json(['success' => 'Layanan berhasil ditambahkan untuk outlet aktif.']);
     }
 
     public function edit(Service $service)
@@ -62,30 +78,56 @@ class ServiceController extends Controller
 
     public function update(Request $request, Service $service)
     {
+        $outletId = config('app.active_outlet_id');
+
+        // 🔒 Pastikan hanya bisa edit service outlet aktif
+        if ($service->outlet_id !== $outletId && $service->outlet_id !== null) {
+            return response()->json(['error' => 'Tidak dapat mengubah layanan dari outlet lain.'], 403);
+        }
+
         $validated = $this->validateService($request, $service->id);
         $service->update($validated);
-        return response()->json(['success' => 'Service updated successfully.']);
+
+        return response()->json(['success' => 'Layanan berhasil diperbarui.']);
     }
 
     public function destroy(Service $service)
     {
-        // Nanti bisa dicek apakah jasa terikat dengan transaksi penjualan
+        $outletId = config('app.active_outlet_id');
+
+        // 🔒 Cegah hapus antar outlet
+        if ($service->outlet_id !== $outletId && $service->outlet_id !== null) {
+            return response()->json(['error' => 'Tidak dapat menghapus layanan dari outlet lain.'], 403);
+        }
+
         $service->delete();
-        return response()->json(['success' => 'Service has been deleted successfully.']);
+        return response()->json(['success' => 'Layanan berhasil dihapus.']);
     }
 
-    // Helper validasi
     private function validateService(Request $request, $serviceId = null)
     {
         $companyId = auth()->user()->company_id;
-        $rules = [
-            // PERBAIKAN: unik hanya di dalam company ini
-            'name' => ['required', 'string', 'max:255', Rule::unique('services')->where('company_id', $companyId)->ignore($serviceId)],
-            // PERBAIKAN: kategori harus ada di dalam company ini
-            'category_id' => ['required', Rule::exists('categories', 'id')->where('company_id', $companyId)],
-            'price' => ['required', 'numeric', 'min:0'],
-        ];
+        $outletId  = config('app.active_outlet_id');
 
-        return $request->validate($rules);
+        return $request->validate([
+            'name' => [
+                'required', 'string', 'max:255',
+                Rule::unique('services')
+                    ->where('company_id', $companyId)
+                    ->where(function ($q) use ($outletId) {
+                        $q->whereNull('outlet_id')->orWhere('outlet_id', $outletId);
+                    })
+                    ->ignore($serviceId),
+            ],
+            'category_id' => [
+                'required',
+                Rule::exists('categories', 'id')
+                    ->where('company_id', $companyId)
+                    ->where(function ($q) use ($outletId) {
+                        $q->whereNull('outlet_id')->orWhere('outlet_id', $outletId);
+                    }),
+            ],
+            'price' => ['required', 'numeric', 'min:0'],
+        ]);
     }
 }

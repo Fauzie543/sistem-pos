@@ -6,7 +6,9 @@ use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Tenant\SaleController;
+use App\Http\Controllers\Tenant\PromoController;
 use App\Http\Controllers\SupportTicketController;
+use App\Http\Controllers\Tenant\OutletController;
 use App\Http\Controllers\Tenant\BillingController;
 use App\Http\Controllers\Tenant\ProductController;
 use App\Http\Controllers\Tenant\ServiceController;
@@ -69,6 +71,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/{ticket}/replies', [SupportTicketController::class, 'replies'])->name('replies');
     });
 
+    Route::post('/switch-outlet', function (Request $request) {
+        session(['active_outlet_id' => $request->outlet_id]);
+        return back();
+    })->name('outlet.switch');
     
     Route::middleware('subscribed')->group(function() {
 
@@ -96,6 +102,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::put('/{product}', [ProductController::class, 'update'])->name('update');
             Route::delete('/{product}', [ProductController::class, 'destroy'])->name('destroy');
             
+        });
+        
+        Route::prefix('promos')->name('promos.')->middleware('feature:promo_discount')->group(function () {
+            Route::get('/', [PromoController::class, 'index'])->name('index');
+            Route::get('/data', [PromoController::class, 'data'])->name('data');
+            Route::post('/', [PromoController::class, 'store'])->name('store');
+        });
+
+        Route::prefix('outlets')->name('outlets.')->middleware('feature:multi_outlet', 'setActiveOutlet')->group(function () {
+            Route::get('/', [OutletController::class, 'index'])->name('index');
+            Route::get('/data', [OutletController::class, 'data'])->name('data');
+            Route::post('/', [OutletController::class, 'store'])->name('store');
+            Route::get('/{outlet}/edit', [OutletController::class, 'edit'])->name('edit');
+            Route::put('/{outlet}', [OutletController::class, 'update'])->name('update');
+            Route::delete('/{outlet}', [OutletController::class, 'destroy'])->name('destroy');
         });
 
         Route::prefix('services')->name('services.')->middleware('feature:service_management')->group(function () {

@@ -17,15 +17,23 @@ class SupplierController extends Controller
 
     public function data()
     {
-        $suppliers = Supplier::query();
+        $companyId = auth()->user()->company_id;
+        $outletId  = config('app.active_outlet_id'); // ✅ outlet aktif
+
+        $suppliers = Supplier::where('company_id', $companyId)
+            ->where(function ($q) use ($outletId) {
+                $q->whereNull('outlet_id')->orWhere('outlet_id', $outletId);
+            });
 
         return DataTables::of($suppliers)
             ->addIndexColumn()
             ->addColumn('action', function ($supplier) {
                 $deleteUrl = route('suppliers.destroy', $supplier->id);
                 return '
-                    <a href="javascript:void(0)" data-id="' . $supplier->id . '" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded text-xs edit-btn">Edit</a>
-                    <a href="javascript:void(0)" data-url="' . $deleteUrl . '" class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-xs delete-btn ml-2">Delete</a>
+                    <a href="javascript:void(0)" data-id="' . $supplier->id . '" 
+                       class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded text-xs edit-btn">Edit</a>
+                    <a href="javascript:void(0)" data-url="' . $deleteUrl . '" 
+                       class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-xs delete-btn ml-2">Delete</a>
                 ';
             })
             ->rawColumns(['action'])
@@ -34,11 +42,16 @@ class SupplierController extends Controller
 
     public function store(Request $request)
     {
+        $companyId = auth()->user()->company_id;
+        $outletId  = config('app.active_outlet_id'); // ✅ outlet aktif
+
         $validated = $this->validateSupplier($request);
-        // PERBAIKAN: Tambahkan company_id
-        $validated['company_id'] = auth()->user()->company_id;
+        $validated['company_id'] = $companyId;
+        $validated['outlet_id']  = $outletId; // ✅ simpan outlet aktif
+
         Supplier::create($validated);
-        return response()->json(['success' => 'Supplier created successfully.']);
+
+        return response()->json(['success' => 'Supplier berhasil ditambahkan untuk outlet aktif.']);
     }
 
     public function edit(Supplier $supplier)
@@ -48,29 +61,50 @@ class SupplierController extends Controller
 
     public function update(Request $request, Supplier $supplier)
     {
+        $outletId = config('app.active_outlet_id');
+
+        // 🔒 Cegah update supplier outlet lain
+        if ($supplier->outlet_id !== $outletId && $supplier->outlet_id !== null) {
+            return response()->json(['error' => 'Tidak dapat mengubah supplier dari outlet lain.'], 403);
+        }
+
         $validated = $this->validateSupplier($request, $supplier->id);
         $supplier->update($validated);
-        return response()->json(['success' => 'Supplier updated successfully.']);
+
+        return response()->json(['success' => 'Supplier berhasil diperbarui.']);
     }
 
     public function destroy(Supplier $supplier)
     {
-        // Nanti bisa ditambahkan pengecekan apakah supplier terikat dengan transaksi pembelian
+        $outletId = config('app.active_outlet_id');
+
+        // 🔒 Cegah hapus supplier outlet lain
+        if ($supplier->outlet_id !== $outletId && $supplier->outlet_id !== null) {
+            return response()->json(['error' => 'Tidak dapat menghapus supplier dari outlet lain.'], 403);
+        }
+
         $supplier->delete();
-        return response()->json(['success' => 'Supplier has been deleted successfully.']);
+        return response()->json(['success' => 'Supplier berhasil dihapus.']);
     }
 
     private function validateSupplier(Request $request, $supplierId = null)
     {
         $companyId = auth()->user()->company_id;
-        $rules = [
-            // PERBAIKAN: Nama supplier unik per company
-            'name' => ['required', 'string', 'max:255', Rule::unique('suppliers')->where('company_id', $companyId)->ignore($supplierId)],
+        $outletId  = config('app.active_outlet_id');
+
+        return $request->validate([
+            'name' => [
+                'required', 'string', 'max:255',
+                Rule::unique('suppliers')
+                    ->where('company_id', $companyId)
+                    ->where(function ($q) use ($outletId) {
+                        $q->whereNull('outlet_id')->orWhere('outlet_id', $outletId);
+                    })
+                    ->ignore($supplierId),
+            ],
             'phone_number' => ['required', 'string', 'max:20'],
             'address' => ['nullable', 'string'],
             'contact_person' => ['nullable', 'string', 'max:255'],
-        ];
-
-        return $request->validate($rules);
+        ]);
     }
 }

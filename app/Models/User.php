@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-
+use Illuminate\Support\Facades\Cache;
 
 class User extends Authenticatable
 {
@@ -25,6 +25,7 @@ class User extends Authenticatable
         'password',
         'role_id',
         'company_id',
+        'outlet_id',
     ];
 
     /**
@@ -58,4 +59,9 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Company::class)->with('plan.features');
     }
+    public function outlet()
+    {
+        return $this->belongsTo(Outlet::class);
+    }
+    
 }

@@ -12,7 +12,7 @@ class Service extends Model
 {
     use HasFactory, SoftDeletes, UsesTenantConnection;
 
-    protected $fillable = ['category_id', 'name', 'price', 'company_id'];
+    protected $fillable = ['category_id', 'name', 'price', 'company_id', 'outlet_id',];
 
     /**
      * Get the category that owns the Service
@@ -20,5 +20,9 @@ class Service extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+    public function outlet()
+    {
+        return $this->belongsTo(Outlet::class);
     }
 }

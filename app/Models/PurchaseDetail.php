@@ -17,7 +17,8 @@ class PurchaseDetail extends Model
         'quantity',
         'price',
         'subtotal', 
-        'company_id'
+        'company_id',
+        'outlet_id',
     ];
 
     public function purchase(): BelongsTo
@@ -28,5 +29,9 @@ class PurchaseDetail extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+    public function outlet()
+    {
+        return $this->belongsTo(Outlet::class);
     }
 }

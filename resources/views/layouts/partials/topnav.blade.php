@@ -47,7 +47,30 @@
             </div>
             
             {{-- Menu User (Kanan Atas) --}}
-            <div class="flex items-center">
+            <div class="flex items-center space-x-6 pr-4">
+                @if(auth()->user()->company && auth()->user()->company->featureEnabled('multi_outlet'))
+                    @php
+                        $outlets = auth()->user()->company->outlets ?? collect();
+                    @endphp
+
+                    @if($outlets->count() > 0)
+                        <form action="{{ route('outlet.switch') }}" method="POST" class="flex items-center">
+                            @csrf
+                            <select name="outlet_id" onchange="this.form.submit()"
+                                class="border border-gray-300 rounded-md px-3 py-1.5 text-sm text-gray-700 
+                                    dark:bg-gray-700 dark:text-white focus:ring-blue-500 focus:border-blue-500">
+                                @foreach($outlets as $outlet)
+                                    <option value="{{ $outlet->id }}"
+                                        {{ session('active_outlet_id', auth()->user()->outlet_id) == $outlet->id ? 'selected' : '' }}>
+                                        {{ $outlet->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </form>
+                    @else
+                        <span class="text-sm text-gray-400 italic">Belum ada outlet</span>
+                    @endif
+                @endif
                 <div class="flex items-center ms-3">
                     <div>
                         <button type="button" class="flex text-sm bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600" aria-expanded="false" data-dropdown-toggle="dropdown-user">

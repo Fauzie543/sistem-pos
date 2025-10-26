@@ -10,66 +10,75 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
-use Illuminate\Validation\Rule; // <-- PENTING: Import Rule
+use Illuminate\Validation\Rule;
+use Carbon\Carbon;
 
 class PurchaseController extends Controller
 {
-    /**
-     * Menampilkan halaman daftar transaksi pembelian.
-     * (Tidak ada perubahan, view akan memanggil 'data()')
-     */
     public function index()
     {
         return view('purchases.index');
     }
 
-    /**
-     * Menyediakan data untuk DataTables.
-     * (Tidak perlu diubah, Global Scope akan otomatis memfilter data)
-     */
     public function data()
     {
-        // Global scope dari spatie/laravel-multitenancy akan otomatis menambahkan ->where('company_id', ...)
-        $purchases = Purchase::with(['supplier', 'user'])->select('purchases.*');
+        $companyId = auth()->user()->company_id;
+        $outletId  = config('app.active_outlet_id'); // ✅ outlet aktif
+
+        $purchases = Purchase::with(['supplier', 'user'])
+            ->where('company_id', $companyId)
+            ->where('outlet_id', $outletId) // ✅ filter outlet
+            ->select('purchases.*');
 
         return DataTables::of($purchases)
             ->addIndexColumn()
-            ->editColumn('purchase_date', fn($p) => \Carbon\Carbon::parse($p->purchase_date)->format('d F Y'))
+            ->editColumn('purchase_date', fn($p) => Carbon::parse($p->purchase_date)->format('d F Y'))
             ->editColumn('total_amount', fn($p) => 'Rp ' . number_format($p->total_amount, 0, ',', '.'))
             ->addColumn('action', function ($purchase) {
-                // Route model binding juga otomatis aman karena Global Scope
-                return '<a href="'.route('purchases.show', $purchase->id).'" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded text-xs">View Details</a>';
+                return '<a href="'.route('purchases.show', $purchase->id).'" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded text-xs">View</a>';
             })
             ->rawColumns(['action'])
             ->make(true);
     }
 
-    /**
-     * Menampilkan form untuk membuat transaksi pembelian baru.
-     * (Tidak perlu diubah, Global Scope akan otomatis memfilter supplier)
-     */
     public function create()
     {
-        // Global scope akan memastikan hanya supplier dari company ini yang ditampilkan
-        $suppliers = Supplier::orderBy('name')->get();
+        $companyId = auth()->user()->company_id;
+        $outletId  = config('app.active_outlet_id');
+
+        // ✅ Supplier per outlet
+        $suppliers = Supplier::where('company_id', $companyId)
+            ->where(function ($q) use ($outletId) {
+                $q->whereNull('outlet_id')->orWhere('outlet_id', $outletId);
+            })
+            ->orderBy('name')
+            ->get();
+
         return view('purchases.create', compact('suppliers'));
     }
 
-    /**
-     * Menyimpan transaksi pembelian baru ke database.
-     * (PERUBAHAN PENTING DI SINI)
-     */
     public function store(Request $request)
     {
         $companyId = auth()->user()->company_id;
+        $outletId  = config('app.active_outlet_id'); // ✅ outlet aktif
 
         $request->validate([
-            // Validasi supplier_id hanya di dalam company yang sama (untuk keamanan)
-            'supplier_id' => ['required', Rule::exists('suppliers', 'id')->where('company_id', $companyId)],
+            'supplier_id' => [
+                'required',
+                Rule::exists('suppliers', 'id')
+                    ->where('company_id', $companyId)
+                    ->where(function ($q) use ($outletId) {
+                        $q->where('outlet_id', $outletId)->orWhereNull('outlet_id');
+                    }),
+            ],
             'purchase_date' => ['required', 'date'],
             'products' => ['required', 'array', 'min:1'],
-            // Validasi product_id hanya di dalam company yang sama
-            'products.*.id' => ['required', Rule::exists('products', 'id')->where('company_id', $companyId)],
+            'products.*.id' => [
+                'required',
+                Rule::exists('products', 'id')
+                    ->where('company_id', $companyId)
+                    ->where('outlet_id', $outletId),
+            ],
             'products.*.quantity' => ['required', 'integer', 'min:1'],
             'products.*.price' => ['required', 'numeric', 'min:0'],
         ]);
@@ -77,73 +86,77 @@ class PurchaseController extends Controller
         try {
             DB::beginTransaction();
 
-            $totalAmount = 0;
-            foreach ($request->products as $product) {
-                $totalAmount += $product['quantity'] * $product['price'];
-            }
-            
-            // 1. Buat record utama dan tambahkan company_id
+            $totalAmount = collect($request->products)
+                ->sum(fn($p) => $p['quantity'] * $p['price']);
+
             $purchase = Purchase::create([
-                'supplier_id' => $request->supplier_id,
-                'user_id' => Auth::id(),
+                'supplier_id'    => $request->supplier_id,
+                'user_id'        => Auth::id(),
                 'invoice_number' => $request->invoice_number,
-                'purchase_date' => $request->purchase_date,
-                'total_amount' => $totalAmount,
-                'status' => 'diterima',
-                'company_id' => $companyId, // <-- TAMBAHKAN INI
+                'purchase_date'  => $request->purchase_date,
+                'total_amount'   => $totalAmount,
+                'status'         => 'diterima',
+                'company_id'     => $companyId,
+                'outlet_id'      => $outletId, // ✅ outlet aktif
             ]);
 
-            // 2. Loop dan simpan detail produk, lalu update stok
-            foreach ($request->products as $productData) {
-                // PurchaseDetail tidak perlu company_id karena sudah terhubung ke Purchase
+            foreach ($request->products as $p) {
                 $purchase->details()->create([
-                    'product_id' => $productData['id'],
-                    'quantity' => $productData['quantity'],
-                    'price' => $productData['price'],
-                    'subtotal' => $productData['quantity'] * $productData['price'],
-                    'company_id' => $companyId,
+                    'product_id'  => $p['id'],
+                    'quantity'    => $p['quantity'],
+                    'price'       => $p['price'],
+                    'subtotal'    => $p['quantity'] * $p['price'],
+                    'company_id'  => $companyId,
+                    'outlet_id'   => $outletId, // ✅
                 ]);
 
-                // Update stok di tabel 'products'
-                // Global Scope memastikan kita mengupdate produk yang benar di company ini
-                $product = Product::find($productData['id']);
+                // ✅ Update stok hanya di outlet ini
+                $product = Product::where('company_id', $companyId)
+                    ->where('outlet_id', $outletId)
+                    ->find($p['id']);
+
                 if ($product) {
-                    $product->increment('stock', $productData['quantity']);
+                    $product->increment('stock', $p['quantity']);
                 }
             }
-            
+
             DB::commit();
 
-            return redirect()->route('purchases.index')->with('success', 'Purchase created successfully and stock has been updated.');
+            return redirect()->route('purchases.index')
+                ->with('success', 'Purchase created successfully for current outlet.');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Failed to create purchase. Error: ' . $e->getMessage())->withInput();
+            return back()->with('error', 'Failed: '.$e->getMessage())->withInput();
         }
     }
 
-    /**
-     * Menampilkan detail dari satu transaksi pembelian.
-     * (Tidak ada perubahan, Route Model Binding sudah aman berkat Global Scope)
-     */
     public function show(Purchase $purchase)
     {
+        // 🔒 Pastikan hanya outlet aktif yang bisa melihat
+        $outletId = config('app.active_outlet_id');
+        if ($purchase->outlet_id !== $outletId) {
+            abort(403, 'Tidak dapat melihat pembelian dari outlet lain.');
+        }
+
         $purchase->load(['supplier', 'user', 'details.product']);
         return view('purchases.show', compact('purchase'));
     }
 
-    /**
-     * Endpoint AJAX untuk mencari produk di form create.
-     * (Tidak ada perubahan, Global Scope akan otomatis memfilter produk)
-     */
     public function searchProducts(Request $request)
     {
-        // Global scope akan otomatis menambahkan ->where('company_id', ...)
-        $term = $request->input('term');
-        $products = Product::where('name', 'LIKE', "%{$term}%")
-                            ->orWhere('sku', 'LIKE', "%{$term}%")
-                            ->limit(10)
-                            ->get(['id', 'name', 'sku', 'purchase_price']);
+        $companyId = auth()->user()->company_id;
+        $outletId  = config('app.active_outlet_id');
+        $term      = $request->input('term');
+
+        $products = Product::where('company_id', $companyId)
+            ->where('outlet_id', $outletId)
+            ->where(function ($q) use ($term) {
+                $q->where('name', 'LIKE', "%{$term}%")
+                  ->orWhere('sku', 'LIKE', "%{$term}%");
+            })
+            ->limit(10)
+            ->get(['id', 'name', 'sku', 'purchase_price']);
 
         return response()->json($products);
     }

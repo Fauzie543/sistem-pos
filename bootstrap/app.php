@@ -18,6 +18,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'feature' => \App\Http\Middleware\CheckFeatureIsEnabled::class,
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'subscribed' => \App\Http\Middleware\CheckSubscription::class,
+            'setActiveOutlet' => \App\Http\Middleware\SetActiveOutlet::class,
+        ]);
+        $middleware->web(append: [
+            \App\Http\Middleware\SetActiveOutlet::class, // ⬅️ aktif di semua route web
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

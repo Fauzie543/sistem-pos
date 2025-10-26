@@ -67,4 +67,9 @@ class Company extends Tenant
         // Penggunaan optional() membuatnya aman bahkan jika relasi plan gagal dimuat.
         return optional($this->plan)->features->contains('key', $featureKey) ?? false;
     }
+
+    public function outlets()
+    {
+        return $this->hasMany(\App\Models\Outlet::class, 'company_id');
+    }
 }

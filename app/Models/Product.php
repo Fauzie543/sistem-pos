@@ -22,7 +22,8 @@ class Product extends Model
         'stock',
         'unit',
         'storage_location',
-        'company_id'
+        'company_id',
+        'outlet_id',
     ];
 
     /**
@@ -31,5 +32,15 @@ class Product extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+    
+    public function promos()
+    {
+        return $this->belongsToMany(Promo::class, 'product_promo');
+    }
+
+    public function outlet()
+    {
+        return $this->belongsTo(Outlet::class);
     }
 }

@@ -104,6 +104,17 @@
                        <span class="sidebar-text flex-1 ms-3 whitespace-nowrap">Produk</span>
                     </a>
                 </li>
+                @if(auth()->user()->company && auth()->user()->company->featureEnabled('promo_discount'))
+                <li>
+                    <a href="{{ route('promos.index') }}" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group {{ request()->routeIs('promos.*') ? 'bg-gray-100 dark:bg-gray-700' : '' }}">
+                        <svg class="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 14l2-2 4 4m5-5a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span class="sidebar-text flex-1 ms-3 whitespace-nowrap">Diskon & Promo</span>
+                    </a>
+                </li>
+                @endif
                 @if(auth()->user()->company && auth()->user()->company->featureEnabled('service_management'))
                     <li>
                         <a href="{{ route('services.index') }}" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group {{ request()->routeIs('services.*') ? 'bg-gray-100 dark:bg-gray-700' : '' }}">
@@ -159,6 +170,18 @@
                         <span class="sidebar-text flex-1 ms-3 whitespace-nowrap">Profil Perusahaan</span>
                     </a>
                 </li>
+                @if(auth()->user()->company && auth()->user()->company->featureEnabled('multi_outlet'))
+                <li>
+                    <a href="{{ route('outlets.index') }}" 
+                    class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group {{ request()->routeIs('outlets.*') ? 'bg-gray-100 dark:bg-gray-700' : '' }}">
+                        <svg class="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 10h16M4 14h10M4 18h8" />
+                        </svg>
+                        <span class="sidebar-text flex-1 ms-3 whitespace-nowrap">Cabang / Outlet</span>
+                    </a>
+                </li>
+                @endif
                 @if(auth()->user()->company && auth()->user()->company->featureEnabled('employee_management'))
                     <li>
                         <a href="{{ route('users.index') }}" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group {{ request()->routeIs('users.index') ? 'bg-gray-100 dark:bg-gray-700' : '' }}">

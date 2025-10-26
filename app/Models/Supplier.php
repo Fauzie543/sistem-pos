@@ -16,6 +16,11 @@ class Supplier extends Model
         'contact_person',
         'phone_number',
         'address',
-        'company_id'
+        'company_id',
+        'outlet_id',
     ];
+    public function outlet()
+    {
+        return $this->belongsTo(Outlet::class);
+    }
 }
