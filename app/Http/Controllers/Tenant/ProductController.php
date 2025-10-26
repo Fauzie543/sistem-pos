@@ -62,11 +62,22 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
+        $company = auth()->user()->company;
+        $outletId = config('app.active_outlet_id');
+        $isPro = $company->featureEnabled('purchase_management');
+
         $validated = $this->validateProduct($request);
-        $validated['company_id'] = auth()->user()->company_id;
-        $validated['outlet_id'] = config('app.active_outlet_id');
+
+        $validated['company_id'] = $company->id;
+        $validated['outlet_id'] = $outletId;
+
+        if ($isPro) {
+            $validated['stock'] = 0;
+        }
+
         Product::create($validated);
-        return response()->json(['success' => 'Product created successfully.']);
+
+        return response()->json(['success' => 'Produk berhasil ditambahkan.']);
     }
 
     public function edit(Product $product)
@@ -76,36 +87,18 @@ class ProductController extends Controller
 
     public function update(Request $request, Product $product)
     {
-        $companyId = auth()->user()->company_id;
-        $outletId  = config('app.active_outlet_id'); // outlet aktif dari middleware
+        $company = auth()->user()->company;
+        $outletId = config('app.active_outlet_id');
+        $isPro = $company->featureEnabled('purchase_management');
 
-        // Validasi data (pastikan SKU unik dalam satu company + outlet)
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'category_id' => [
-                'required',
-                Rule::exists('categories', 'id')
-                    ->where('company_id', $companyId)
-                    ->where(function ($q) use ($outletId) {
-                        $q->whereNull('outlet_id')->orWhere('outlet_id', $outletId);
-                    }),
-            ],
-            'purchase_price' => ['required', 'numeric', 'min:0'],
-            'selling_price' => ['required', 'numeric', 'min:0'],
-            'stock' => ['required', 'integer', 'min:0'],
-            'sku' => [
-                'nullable', 'string', 'max:50',
-                Rule::unique('products')
-                    ->where('company_id', $companyId)
-                    ->where('outlet_id', $outletId)
-                    ->ignore($product->id),
-            ],
-            'unit' => ['required', 'string', 'max:20'],
-            'storage_location' => ['nullable', 'string', 'max:50'],
-            'description' => ['nullable', 'string'],
-        ]);
+        $validated = $this->validateProduct($request, $product->id);
 
-        // Pastikan produk yang diupdate milik outlet aktif
+        // Cegah update stok manual jika Pro
+        if ($isPro) {
+            unset($validated['stock']);
+        }
+
+        // Validasi outlet
         if ($product->outlet_id !== $outletId) {
             return response()->json(['error' => 'Tidak dapat mengubah produk dari outlet lain.'], 403);
         }
@@ -127,15 +120,19 @@ class ProductController extends Controller
     private function validateProduct(Request $request, $productId = null)
     {
         $companyId = auth()->user()->company_id;
+        $company = auth()->user()->company;
+        $isPro = $company->featureEnabled('purchase_management');
+
         $rules = [
             'name' => ['required', 'string', 'max:255'],
-            // PERBAIKAN: Pastikan category_id milik company yang sama
             'category_id' => ['required', Rule::exists('categories', 'id')->where('company_id', $companyId)],
             'purchase_price' => ['required', 'numeric', 'min:0'],
             'selling_price' => ['required', 'numeric', 'min:0'],
-            'stock' => ['required', 'integer', 'min:0'],
-            // PERBAIKAN: Pastikan SKU unik hanya di dalam company yang sama
-            'sku' => ['nullable', 'string', 'max:50', Rule::unique('products')->where('company_id', $companyId)->ignore($productId)],
+            'stock' => [$isPro ? 'nullable' : 'required', 'integer', 'min:0'],
+            'sku' => [
+                'nullable', 'string', 'max:50',
+                Rule::unique('products')->where('company_id', $companyId)->ignore($productId)
+            ],
             'unit' => ['required', 'string', 'max:20'],
             'storage_location' => ['nullable', 'string', 'max:50'],
             'description' => ['nullable', 'string'],
@@ -143,4 +140,5 @@ class ProductController extends Controller
 
         return $request->validate($rules);
     }
+
 }

@@ -121,11 +121,17 @@ $(function () {
         var deleteUrl = $(this).data('url');
 
         Swal.fire({
-            title: 'Are you sure?',
+            title: 'Hapus Data?',
+            text: 'Data yang dihapus tidak dapat dikembalikan!',
             icon: 'warning',
-            text: "You won't be able to revert this!",
             showCancelButton: true,
-            confirmButtonText: 'Yes, delete it!'
+            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: 'Batal',
+            customClass: {
+                confirmButton: 'bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded',
+                cancelButton: 'bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded ml-2'
+            },
+            buttonsStyling: false
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
@@ -133,11 +139,29 @@ $(function () {
                     method: 'DELETE',
                     headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                     success: function(response) {
-                        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: response.success, showConfirmButton: false, timer: 3000 });
+                        Swal.fire({
+                            title: 'Berhasil!',
+                            text: response.success,
+                            icon: 'success',
+                            confirmButtonText: 'Tutup',
+                            customClass: {
+                                confirmButton: 'bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded'
+                            },
+                            buttonsStyling: false
+                        });
                         table.ajax.reload();
                     },
                     error: function(xhr) {
-                        Swal.fire('Failed!', xhr.responseJSON.error || 'There was a problem.', 'error');
+                        Swal.fire({
+                            title: 'Gagal!',
+                            text: xhr.responseJSON?.error || 'Terjadi kesalahan saat menghapus data.',
+                            icon: 'error',
+                            confirmButtonText: 'Tutup',
+                            customClass: {
+                                confirmButton: 'bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded'
+                            },
+                            buttonsStyling: false
+                        });
                     }
                 });
             }

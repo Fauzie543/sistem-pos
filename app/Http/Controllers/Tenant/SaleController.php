@@ -57,6 +57,7 @@ class SaleController extends Controller
         $products = Product::where('company_id', $companyId)
             ->where('outlet_id', $outletId)
             ->where('stock', '>', 0)
+            ->with('promos')
             ->orderBy('name')
             ->get();
 
@@ -71,7 +72,8 @@ class SaleController extends Controller
             return (object) [
                 'id' => $p->id,
                 'name' => $p->name,
-                'price' => $p->selling_price,
+                'price' => $p->final_price,
+                'original_price' => $p->selling_price,
                 'type' => 'product',
                 'category_id' => $p->category_id
             ];
@@ -81,6 +83,7 @@ class SaleController extends Controller
                     'id' => $s->id,
                     'name' => $s->name,
                     'price' => $s->price,
+                    'original_price' => $s->price,
                     'type' => 'service',
                     'category_id' => $s->category_id
                 ];
@@ -327,33 +330,51 @@ class SaleController extends Controller
         }
     }
 
-    public function showReceipt(Sale $sale)
+    public function showReceipt($id)
     {
-        $outletId = config('app.active_outlet_id');
-        if ($sale->outlet_id !== $outletId) {
-            abort(403, 'Tidak dapat melihat struk dari outlet lain.');
-        }
+        $sale = Sale::with(['details.product', 'details.service', 'user'])->findOrFail($id);
 
-        $sale->load(['user', 'details.product', 'details.service']);
-        return view('sales.receipt', compact('sale'));
+        // Ambil company dari user kasir / tenant
+        $company = auth()->user()->company ?? $sale->user->company ?? null;
+
+        return view('sales.receipt', compact('sale', 'company'));
     }
 
     // === EXPORT ===
     public function exportExcel(Request $request)
     {
-        $companyId = auth()->user()->company_id;
+        $company = auth()->user()->company;
+        $companyId = $company->id;
         $outletId  = config('app.active_outlet_id');
-        $bulan = $request->get('bulan');
-        $tahun = $request->get('tahun');
+
+        // Ambil tanggal sekarang untuk laporan harian
+        $today = now()->toDateString();
+
+        // Deteksi apakah company ini paket BASIC (tidak punya fitur lanjutan)
+        $isBasic = !$company->featureEnabled('inventory_control') && !$company->featureEnabled('employee_management');
 
         $query = Sale::with(['customer', 'user'])
             ->where('company_id', $companyId)
             ->where('outlet_id', $outletId);
 
-        if ($bulan) $query->whereMonth('created_at', $bulan);
-        if ($tahun) $query->whereYear('created_at', $tahun);
+        // Jika paket basic → hanya hari ini
+        if ($isBasic) {
+            $query->whereDate('created_at', $today);
+        } else {
+            // Paket pro bisa filter bulan dan tahun
+            $bulan = $request->get('bulan');
+            $tahun = $request->get('tahun');
+            if ($bulan) $query->whereMonth('created_at', $bulan);
+            if ($tahun) $query->whereYear('created_at', $tahun);
+        }
 
-        $sales = $query->get();
-        return Excel::download(new SalesExport($sales), 'sales-export.xlsx');
+        $sales = $query->latest()->get();
+
+        // Nama file dinamis
+        $filename = $isBasic
+            ? 'laporan-harian-' . now()->format('Y-m-d') . '.xlsx'
+            : 'laporan-penjualan.xlsx';
+
+        return Excel::download(new SalesExport($sales, $company->name ?? 'KASLO POS'), $filename);
     }
 }

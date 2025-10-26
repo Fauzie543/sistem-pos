@@ -43,4 +43,31 @@ class Product extends Model
     {
         return $this->belongsTo(Outlet::class);
     }
+
+    public function activePromo()
+    {
+        return $this->belongsToMany(Promo::class, 'product_promo')
+            ->where('is_active', true)
+            ->whereDate('start_date', '<=', now())
+            ->whereDate('end_date', '>=', now())
+            ->latest()
+            ->first();
+    }
+
+    public function getFinalPriceAttribute()
+    {
+        $promo = $this->activePromo();
+
+        if (!$promo) return $this->selling_price;
+
+        if ($promo->type === 'percent') {
+            return max(0, $this->selling_price - ($this->selling_price * $promo->value / 100));
+        }
+
+        if ($promo->type === 'fixed') {
+            return max(0, $this->selling_price - $promo->value);
+        }
+
+        return $this->selling_price;
+    }
 }

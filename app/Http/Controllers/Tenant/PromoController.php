@@ -26,9 +26,8 @@ class PromoController extends Controller
     public function data()
     {
         $companyId = auth()->user()->company_id;
-        $outletId  = config('app.active_outlet_id'); // ✅ outlet aktif
+        $outletId  = config('app.active_outlet_id');
 
-        // Promo milik company dan outlet aktif
         $promos = Promo::where('company_id', $companyId)
             ->where('outlet_id', $outletId)
             ->with('products');
@@ -36,9 +35,7 @@ class PromoController extends Controller
         return DataTables::of($promos)
             ->addIndexColumn()
             ->addColumn('products', fn($promo) => $promo->products->pluck('name')->join(', '))
-            ->editColumn('value', fn($p) => $p->type === 'percent' 
-                ? $p->value . ' %' 
-                : 'Rp ' . number_format($p->value, 0, ',', '.'))
+            // 💡 kirim value mentah, jangan diformat di backend
             ->make(true);
     }
 

@@ -56,18 +56,32 @@ $(document).ready(function () {
         tahunOptions += `<option value="${y}">${y}</option>`;
     }
 
-    $('div.export-button-placeholder').html(`
-        <select id="filterBulan" class="border border-gray-300 text-sm rounded px-2 py-1 mr-2">
-            ${bulanOptions}
-        </select>
-        <select id="filterTahun" class="border border-gray-300 text-sm rounded px-2 py-1 mr-2">
-            ${tahunOptions}
-        </select>
-        <button id="exportExcelBtn"
-            class="bg-green-500 hover:bg-green-600 text-white text-sm font-semibold py-1.5 px-3 rounded transition">
-            <i class="fas fa-file-excel mr-1"></i> Export Excel
-        </button>
-    `);
+    @php
+        $company = auth()->user()->company;
+        $isBasic = !$company->featureEnabled('inventory_control') && !$company->featureEnabled('employee_management');
+    @endphp
+
+    @if ($isBasic)
+        $('div.export-button-placeholder').html(`
+            <button id="exportExcelBtn"
+                class="bg-green-500 hover:bg-green-600 text-white text-sm font-semibold py-1.5 px-3 rounded transition">
+                <i class="fas fa-file-excel mr-1"></i> Export Laporan Harian
+            </button>
+        `);
+    @else
+        $('div.export-button-placeholder').html(`
+            <select id="filterBulan" class="border border-gray-300 text-sm rounded px-2 py-1 mr-2">
+                ${bulanOptions}
+            </select>
+            <select id="filterTahun" class="border border-gray-300 text-sm rounded px-2 py-1 mr-2">
+                ${tahunOptions}
+            </select>
+            <button id="exportExcelBtn"
+                class="bg-green-500 hover:bg-green-600 text-white text-sm font-semibold py-1.5 px-3 rounded transition">
+                <i class="fas fa-file-excel mr-1"></i> Export Excel
+            </button>
+        `);
+    @endif
 
     // === 3️⃣ Event: Export berdasarkan filter bulan & tahun ===
     $(document).on('click', '#exportExcelBtn', function() {

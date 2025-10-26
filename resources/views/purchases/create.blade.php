@@ -204,19 +204,54 @@ $(function () {
     });
 
     // === SweetAlert session ===
-    @if (session('error'))
-        Swal.fire({ icon: 'error', title: 'Gagal!', text: "{{ session('error') }}" });
-    @endif
-    @if (session('success'))
-        Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'success',
-            title: "{{ session('success') }}",
-            showConfirmButton: false,
-            timer: 3000
-        });
-    @endif
+    // === SweetAlert session & validasi ===
+@if ($errors->any())
+    Swal.fire({
+        icon: 'error',
+        title: 'Gagal Menyimpan!',
+        html: `
+            <ul style="text-align:left; margin:0; padding-left:18px;">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        `,
+        confirmButtonText: 'Tutup',
+        customClass: {
+            confirmButton: 'bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded',
+        },
+        buttonsStyling: false
+    });
+@endif
+
+@if (session('error'))
+    Swal.fire({
+        icon: 'error',
+        title: 'Gagal!',
+        text: "{{ session('error') }}",
+        confirmButtonText: 'Tutup',
+        customClass: {
+            confirmButton: 'bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded',
+        },
+        buttonsStyling: false
+    });
+@endif
+
+@if (session('success'))
+    Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: "{{ session('success') }}",
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        background: '#f0fdf4',
+        color: '#065f46',
+        iconColor: '#16a34a'
+    });
+@endif
+
 });
 </script>
 @endpush

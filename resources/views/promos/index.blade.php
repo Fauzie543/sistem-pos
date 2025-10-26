@@ -44,20 +44,63 @@ $(function () {
         columns: [
             { data: 'DT_RowIndex', name: 'DT_RowIndex', className: 'text-center', orderable: false, searchable: false },
             { data: 'name', name: 'name' },
-            { data: 'type', name: 'type', render: function (data) {
-                return data === 'percent' ? 'Persentase (%)' : 'Nominal (Rp)';
-            }},
-            { data: 'value', name: 'value', className: 'text-right' },
-            { data: null, name: 'periode', render: function (data) {
-                return `${data.start_date} s/d ${data.end_date}`;
-            }},
+            {
+                data: 'type',
+                name: 'type',
+                render: function (data) {
+                    return data === 'percent' ? 'Persentase (%)' : 'Nominal (Rp)';
+                }
+            },
+            {
+                data: 'value',
+                name: 'value',
+                className: 'text-right',
+                render: function (data, type, row) {
+                    const value = parseFloat(data);
+                    if (isNaN(value)) return '-';
+
+                    if (row.type === 'percent') {
+                        return Number.isInteger(value)
+                            ? `${value}%`
+                            : `${value.toFixed(2)}%`;
+                    } else {
+                        return 'Rp ' + new Intl.NumberFormat('id-ID', {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0
+                        }).format(value);
+                    }
+                }
+            },
+            {
+                data: null,
+                name: 'periode',
+                render: function (data) {
+                    const start = new Date(data.start_date);
+                    const end = new Date(data.end_date);
+
+                    const options = { day: '2-digit', month: 'short', year: 'numeric' };
+
+                    const startFormatted = start.toLocaleDateString('id-ID', options).replace('.', '');
+                    const endFormatted = end.toLocaleDateString('id-ID', options).replace('.', '');
+
+                    return `${startFormatted} s/d ${endFormatted}`;
+                }
+            },
             { data: 'products', name: 'products', defaultContent: '-', render: data => data || '-' },
-            { data: 'is_active', name: 'is_active', className: 'text-center', render: function (data) {
-                return data ? '<span class="text-green-600 font-semibold">Aktif</span>' : '<span class="text-gray-400">Tidak Aktif</span>';
-            }},
+            {
+                data: 'is_active',
+                name: 'is_active',
+                className: 'text-center',
+                render: function (data) {
+                    return data
+                        ? '<span class="text-green-600 font-semibold">Aktif</span>'
+                        : '<span class="text-gray-400">Tidak Aktif</span>';
+                }
+            },
         ],
         dom: '<"flex justify-between items-center mb-4"lf>rt<"flex justify-between items-center mt-4"ip>'
     });
+
 
     // === Modal Logic ===
     $('#addPromoBtn').on('click', function () {

@@ -5,14 +5,11 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ $company->name ?? 'Lemedoit' }} | @yield('title', 'Dashboard')</title>
-        @if($company && $company->logo)
-            <link rel="icon" href="{{ Storage::url($company->logo) }}">
-            <link rel="apple-touch-icon" href="{{ Storage::url($company->logo) }}">
-        @else
-            {{-- Pastikan ada file 'favicon.ico' di folder /public --}}
-            <link rel="icon" href="{{ asset('favicon.ico') }}">
-        @endif
+        <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('assets/images/kaslo-icon.png') }}">
+        <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('assets/images/kaslo-icon.png') }}">
+        <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('assets/images/kaslo-icon.png') }}">
+
+        <title>KASLO | @yield('title', 'Dashboard')</title>
 
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
@@ -24,7 +21,7 @@
             <div>
                 {{-- PERUBAHAN DI SINI: Ganti <x-application-logo> dengan <h1> --}}
                 <a href="/">
-                    <h1 class="text-4xl font-bold text-gray-700 dark:text-gray-300">Sistem POS</h1>
+                    <h1 class="text-4xl font-bold text-gray-700 dark:text-gray-300">KASLO POS</h1>
                 </a>
             </div>
 

@@ -1,21 +1,5 @@
 {{-- /resources/views/layouts/partials/topnav.blade.php --}}
 
-@php
-    // Atur nama dan logo default untuk Super Admin
-    $appName = 'Sistem POS';
-    $appLogo = 'https://flowbite.com/docs/images/logo.svg'; // Logo default Anda
-
-    // Jika pengguna yang login BUKAN superadmin, coba ambil data dari company mereka
-    if (auth()->check() && auth()->user()->role->name !== 'superadmin') {
-        $company = auth()->user()->company;
-        if ($company) {
-            $appName = $company->name;
-            if ($company->logo) {
-                $appLogo = Storage::url($company->logo);
-            }
-        }
-    }
-@endphp
 
 <nav class="fixed top-0 z-50 w-full bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
     <div class="px-3 py-3 lg:px-5 lg:pl-3">
@@ -34,11 +18,11 @@
                 {{-- =============================================== --}}
                 <a href="{{ route('dashboard') }}" class="flex ms-2 md:me-24">
                     {{-- Gunakan variabel $appLogo yang sudah didefinisikan di atas --}}
-                    <img src="{{ $appLogo }}" class="h-8 me-3" alt="App Logo" />
+                    <img src="{{ asset('assets/images/kaslo-icon.png') }}" class="h-8 me-3" alt="App Logo" />
                     
                     {{-- Gunakan variabel $appName yang sudah didefinisikan di atas --}}
                     <span class="self-center text-xl font-semibold sm:text-2xl whitespace-nowrap dark:text-white">
-                        {{ $appName }}
+                        KASLO POS
                     </span>
                 </a>
                 {{-- =============================================== --}}

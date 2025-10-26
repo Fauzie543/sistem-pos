@@ -14,8 +14,7 @@
 </head>
 <body onload="window.print()">
     <div class="center">
-        <h3>{{ config('app.name', 'BengkelPOS') }}</h3>
-        <p>Jl. Teknik Kimia, Surabaya<br>Telp: (031) 123-4567</p>
+        <h3>{{ $company->name ?? 'Nama Perusahaan' }}</h3>
     </div>
     <hr>
     <div>
@@ -43,8 +42,37 @@
         <span>Rp {{ number_format($sale->total_amount, 0, ',', '.') }}</span>
     </div>
 
+    @if(!empty($company->wifi_ssid) || !empty($company->wifi_password) || !empty($company->address) || !empty($company->instagram) || !empty($company->tiktok))
+        <div class="center" style="margin-top: 15px;">
+            @if(!empty($company->wifi_ssid) || !empty($company->wifi_password))
+                @if(!empty($company->wifi_ssid))
+                    <p style="margin: 0;">Username Wifi: {{ $company->wifi_ssid }}</p>
+                @endif
+                @if(!empty($company->wifi_password))
+                    <p style="margin: 0;">Password Wifi: {{ $company->wifi_password }}</p>
+                @endif
+                <br>
+            @endif
+
+            @if(!empty($company->address) || !empty($company->phone))
+                <p style="margin: 0;">
+                    {{ $company->address ?? '' }}<br>
+                    @if(!empty($company->phone)) Telp: {{ $company->phone }} @endif
+                </p>
+            @endif
+
+            @if(!empty($company->instagram) || !empty($company->tiktok))
+                <p style="margin-top: 4px;">
+                    @if(!empty($company->instagram)) Instagram: {{ $company->instagram }}<br>@endif
+                    @if(!empty($company->tiktok)) TikTok: {{ $company->tiktok }} @endif
+                </p>
+            @endif
+        </div>
+    @endif
+
     <div class="center" style="margin-top: 20px;">
         <p>Terima Kasih!</p>
+        <p style="font-size: 10px; margin-top: 10px;">Powered by <strong>LemedoIT</strong></p>
     </div>
 
     <script>

@@ -42,11 +42,18 @@
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label for="stock" class="block text-sm font-medium text-gray-700">Stock</label>
-                        <input type="number" name="stock" id="stock" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                        <span id="stock_error" class="text-red-500 text-xs error-message"></span>
-                    </div>
+                    @if(!auth()->user()->company->featureEnabled('purchase_management'))
+                        <div>
+                            <label for="stock" class="block text-sm font-medium text-gray-700">Stock</label>
+                            <input type="number" name="stock" id="stock" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                            <span id="stock_error" class="text-red-500 text-xs error-message"></span>
+                        </div>
+                    @else
+                        <div>
+                            <label for="stock" class="block text-sm font-medium text-gray-700">Stock (otomatis dari pembelian)</label>
+                            <input type="text" id="stock" value="Otomatis dari pembelian" readonly class="mt-1 block w-full border-gray-300 rounded-md bg-gray-100 text-gray-600 shadow-sm">
+                        </div>
+                    @endif
                      <div>
                         <label for="unit" class="block text-sm font-medium text-gray-700">Unit (e.g., pcs, botol, set)</label>
                         <input type="text" name="unit" id="unit" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">

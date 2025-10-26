@@ -4,7 +4,7 @@
         <hr class="my-4 border-gray-200 sm:mx-auto dark:border-gray-700" />
         <div class="text-center">
             <span class="block text-sm text-gray-500 dark:text-gray-400">
-                © {{ date('Y') }} <a href="{{ route('dashboard') }}" class="hover:underline">{{ $company->name ?? 'BengkelPOS' }}™</a>. All Rights Reserved.
+                © {{ date('Y') }} <a href="{{ route('dashboard') }}" class="hover:underline">KASLO POS™</a>. All Rights Reserved.
             </span>
             
             <span class="block text-xs text-gray-500 dark:text-gray-400 mt-2">

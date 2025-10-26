@@ -39,15 +39,34 @@
         {{-- Grid Daftar Item --}}
         <div id="item-list" class="flex-grow p-4 overflow-y-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             @forelse($items as $item)
-                <div class="item-card cursor-pointer border rounded-lg p-3 flex flex-col h-24 hover:border-blue-500 hover:shadow-lg transition-all" 
-                     data-item-id="{{ $item->type }}-{{ $item->id }}" 
-                     data-category-id="{{ $item->category_id }}"
-                     data-name="{{ strtolower($item->name) }}">
+                <div class="item-card cursor-pointer border rounded-lg p-3 flex flex-col justify-between h-28 hover:border-blue-500 hover:shadow-lg transition-all"
+                    data-item-id="{{ $item->type }}-{{ $item->id }}"
+                    data-category-id="{{ $item->category_id }}"
+                    data-name="{{ strtolower($item->name) }}">
+
                     <div>
                         <p class="font-semibold text-sm truncate">{{ $item->name }}</p>
-                        <span class="text-xs {{ $item->type == 'product' ? 'text-green-600' : 'text-purple-600' }}">{{ $item->type == 'product' ? 'Produk' : 'Jasa' }}</span>
+                        <span class="text-xs {{ $item->type == 'product' ? 'text-green-600' : 'text-purple-600' }}">
+                            {{ $item->type == 'product' ? 'Produk' : 'Jasa' }}
+                        </span>
                     </div>
-                    <p class="text-right font-bold text-gray-800 mt-2">Rp {{ number_format($item->price, 0, ',', '.') }}</p>
+
+                    {{-- HARGA --}}
+                    <div class="text-right mt-auto">
+                        @if($item->price < $item->original_price)
+                            <p class="text-gray-400 line-through text-xs mb-0.5">
+                                Rp {{ number_format($item->original_price, 0, ',', '.') }}
+                            </p>
+                            <p class="font-bold text-green-600 text-sm leading-none">
+                                Rp {{ number_format($item->price, 0, ',', '.') }}
+                            </p>
+                        @else
+                            <p class="font-bold text-gray-800 text-sm leading-none">
+                                Rp {{ number_format($item->price, 0, ',', '.') }}
+                            </p>
+                        @endif
+                    </div>
+
                 </div>
             @empty
                 <div class="col-span-full text-center text-gray-500 py-10">
@@ -56,6 +75,7 @@
                 </div>
             @endforelse
         </div>
+
     </div>
 
     {{-- KOLOM KANAN: KERANJANG & PEMBAYARAN --}}
@@ -63,17 +83,10 @@
     <div class="bg-white rounded-md shadow-sm flex flex-col min-h-0">
         {{-- Info Pelanggan --}}
         <div class="p-4 border-b">
-            <label for="customer_search" class="block text-sm font-medium text-gray-700">Pelanggan</label>
-            <select id="customer_search" class="mt-1 block w-full"></select>
-            @if(auth()->user()->company && auth()->user()->company->featureEnabled('services'))
-                <div id="vehicle_section" class="mt-2 hidden">
-                    <div class="flex justify-between items-center">
-                        <label for="vehicle_id" class="block text-sm font-medium text-gray-700">Kendaraan</label>
-                        <button id="addVehicleBtn" class="text-blue-600 hover:underline text-xs font-bold">+ Tambah</button>
-                    </div>
-                    <select name="vehicle_id" id="vehicle_id" class="mt-1 text-sm block w-full border-gray-300 rounded-md shadow-sm"></select>
-                </div>
-            @endif
+            <label for="customer_input" class="block text-sm font-medium text-gray-700">Pelanggan</label>
+            <input type="text" id="customer_input" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" placeholder="Ketik nama pelanggan...">
+            <div id="customer_suggestions" class="border border-gray-300 rounded-md mt-1 hidden bg-white shadow-md max-h-40 overflow-y-auto"></div>
+
         </div>
 
         {{-- Keranjang Belanja --}}
@@ -130,6 +143,39 @@
     </div>
 </div>
 
+<!-- Modal Tambah Pelanggan (tanpa background hitam) -->
+<div id="addCustomerModal"
+     class="hidden fixed top-20 left-1/2 transform -translate-x-1/2 bg-white border border-gray-300 shadow-2xl rounded-lg w-full max-w-md z-[9999]">
+  <div class="p-6">
+    <h2 class="text-lg font-bold mb-4 border-b pb-2">Tambah Pelanggan Baru</h2>
+    <div class="space-y-3">
+      <div>
+        <label class="block text-sm font-medium">Nama Pelanggan</label>
+        <input type="text" id="new_customer_name"
+               class="w-full border-gray-300 rounded-md shadow-sm mt-1 focus:ring-blue-500 focus:border-blue-500"
+               placeholder="Nama pelanggan">
+      </div>
+      <div>
+        <label class="block text-sm font-medium">Nomor Telepon</label>
+        <input type="text" id="new_customer_phone"
+               class="w-full border-gray-300 rounded-md shadow-sm mt-1 focus:ring-blue-500 focus:border-blue-500"
+               placeholder="Nomor telepon (opsional)">
+      </div>
+    </div>
+    <div class="flex justify-end mt-5 space-x-2 border-t pt-4">
+      <button id="cancelAddCustomer"
+              class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded font-semibold">
+        Batal
+      </button>
+      <button id="saveNewCustomer"
+              class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold">
+        Simpan
+      </button>
+    </div>
+  </div>
+</div>
+
+
 <iframe id="receipt-iframe" style="display:none;"></iframe>
 
 
@@ -140,7 +186,6 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 $(function() {
-    let customer = null;
     let vehicle_id = null;
     let cart = [];
     const allItems = @json($items);
@@ -262,119 +307,6 @@ $(function() {
         cart[index].note = $(this).val();
     });
     
-    // ===================================================
-    // FUNGSI PELANGGAN & KENDARAAN
-    // ===================================================
-    $('#customer_search').select2({
-        placeholder: 'Pilih pelanggan atau ketik untuk mencari...',
-        minimumInputLength: 3,
-        ajax: {
-            url: '{{ route("pos.customers.search") }}',
-            dataType: 'json',
-            delay: 250,
-            processResults: (data) => ({
-                results: $.map(data, (item) => ({
-                    text: item.name + (item.phone_number ? ` (${item.phone_number})` : ''),
-                    id: item.id,
-                    'data-customer': item 
-                }))
-            }),
-        },
-        tags: true, // Izinkan inputan bebas
-        createTag: function (params) {
-            var term = $.trim(params.term);
-            if (term === '') return null;
-            return {
-                id: 'new:' + term,
-                text: `➕ Tambah Pelanggan Baru: "${term}"`,
-            };
-        }
-    });
-
-    // EVENT HANDLER YANG TELAH DISERDERHANAKAN
-    $('#customer_search').on('select2:select', function (e) {
-        const selectedData = e.params.data;
-
-        // Safety Check #1: Pastikan ada data yang terpilih
-        if (!selectedData) {
-            return;
-        }
-
-        // Alur 1: Jika user memilih "➕ Tambah Pelanggan Baru..."
-        if (String(selectedData.id).startsWith('new:')) {
-            const newName = String(selectedData.id).split(':')[1];
-            
-            // Tampilkan modal SweetAlert yang sederhana
-            Swal.fire({
-                title: 'Tambah Pelanggan Baru',
-                html: `<input id="swal-name" class="swal2-input" value="${newName}" placeholder="Nama Pelanggan">
-                    <input id="swal-phone" class="swal2-input" placeholder="Nomor Telepon (Opsional)">`,
-                confirmButtonText: 'Simpan',
-                showCancelButton: true,
-                cancelButtonText: 'Batal',
-                buttonsStyling: false,
-                customClass: {
-                    confirmButton: 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded',
-                    cancelButton: 'bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded ml-2'
-                },
-                preConfirm: () => {
-                    const name = $('#swal-name').val();
-                    if (!name) {
-                        Swal.showValidationMessage(`Nama pelanggan tidak boleh kosong`);
-                        return false;
-                    }
-                    return {
-                        name: name,
-                        phone_number: $('#swal-phone').val()
-                    };
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Kirim data via AJAX
-                    $.post('{{ route('customers.store') }}', { _token: '{{ csrf_token() }}', ...result.value })
-                    .done(function(newCustomer) {
-                        // Update UI
-                        setCustomer(newCustomer);
-                        const option = new Option(newCustomer.name + (newCustomer.phone_number ? ` (${newCustomer.phone_number})` : ''), newCustomer.id, true, true);
-                        $('#customer_search').append(option).trigger('change');
-                        Swal.fire('Berhasil!', 'Pelanggan baru berhasil disimpan.', 'success');
-                    })
-                    .fail(() => {
-                        Swal.fire('Error!', 'Gagal menyimpan pelanggan baru.', 'error');
-                        $('#customer_search').val(null).trigger('change');
-                    });
-                } else {
-                    // Jika user menekan "Batal", reset pilihan
-                    $('#customer_search').val(null).trigger('change');
-                }
-            });
-        
-        // Alur 2: Jika memilih pelanggan yang sudah ada (hasil dari AJAX)
-        } else if (selectedData['data-customer']) {
-            setCustomer(selectedData['data-customer']);
-        
-        // Alur 3 (Fallback): Jika terjadi kondisi aneh, reset saja.
-        } else {
-            $('#customer_search').val(null).trigger('change');
-        }
-    });
-
-    function setCustomer(data) {
-        customer = data;
-        
-        // Cek jika fitur jasa aktif untuk menampilkan/menyembunyikan bagian kendaraan
-        @if(auth()->user()->company && auth()->user()->company->featureEnabled('service_management'))
-            $('#vehicle_section').show();
-            const vehicleSelect = $('#vehicle_id');
-            vehicleSelect.html('<option value="">-- Pilih Kendaraan --</option>');
-            if(customer && customer.vehicles && customer.vehicles.length > 0) {
-                customer.vehicles.forEach(v => {
-                    const vehicleText = `${v.license_plate} (${v.brand || ''} ${v.model || ''})`.trim();
-                    vehicleSelect.append(new Option(vehicleText, v.id));
-                });
-            }
-        @endif
-    }
 
     $('#addVehicleBtn').on('click', function() {
         if (!customer) return;
@@ -647,5 +579,132 @@ $(function() {
         $('#process_sale').prop('disabled', false).text('Bayar');
     }
 });
+
+// ===================================================
+// AUTOCOMPLETE PELANGGAN + MODAL SWEETALERT FIX
+// ===================================================
+let customer = null;
+let typingTimeout = null;
+
+$('#customer_input').on('input', function () {
+    const query = $(this).val().trim();
+    clearTimeout(typingTimeout);
+
+    if (query.length < 1) {
+        $('#customer_suggestions').hide().empty();
+        return;
+    }
+
+    typingTimeout = setTimeout(() => {
+        $.ajax({
+            url: '{{ route("pos.customers.search") }}',
+            data: { q: query },
+            success: function (data) {
+                const results = (data.length ? data : []).filter(item => 
+                    item.name && item.name.toLowerCase().includes(query.toLowerCase())
+                );
+                const suggestionBox = $('#customer_suggestions').empty();
+
+                if (results.length > 0) {
+                    results.forEach(item => {
+                        suggestionBox.append(`
+                            <div class="p-2 hover:bg-blue-100 cursor-pointer text-sm select-customer" 
+                                 data-id="${item.id}" 
+                                 data-name="${item.name}" 
+                                 data-phone="${item.phone_number || ''}">
+                                 ${item.name} ${item.phone_number ? '(' + item.phone_number + ')' : ''}
+                            </div>
+                        `);
+                    });
+                }
+
+                // Tombol tambah pelanggan baru
+                suggestionBox.append(`
+                    <div id="add_new_customer" 
+                         class="p-2 bg-green-50 hover:bg-green-100 cursor-pointer text-sm text-green-700 font-semibold border-t">
+                        ➕ Tambah pelanggan baru: "<span class="italic">${query}</span>"
+                    </div>
+                `);
+
+                suggestionBox.show();
+            }
+        });
+    }, 300);
+});
+
+// Klik pelanggan lama
+$(document).on('click', '.select-customer', function () {
+    const name = $(this).data('name');
+    const id = $(this).data('id');
+    const phone = $(this).data('phone');
+    $('#customer_input').val(name);
+    $('#customer_suggestions').hide();
+    customer = { id, name, phone };
+});
+
+// Klik “Tambah pelanggan baru”
+$(document).on('click', '#add_new_customer', function () {
+    const typedName = $('#customer_input').val().trim();
+    $('#new_customer_name').val(typedName);
+    $('#new_customer_phone').val('');
+    $('#addCustomerModal').removeClass('hidden');
+    $('#customer_suggestions').hide();
+});
+
+// Tutup modal
+$('#cancelAddCustomer').on('click', function () {
+    $('#addCustomerModal').addClass('hidden');
+});
+
+// Simpan pelanggan baru
+$('#saveNewCustomer').on('click', function () {
+    const name = $('#new_customer_name').val().trim();
+    const phone = $('#new_customer_phone').val().trim();
+
+    if (!name) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Nama wajib diisi!',
+            text: 'Silakan isi nama pelanggan terlebih dahulu.',
+            confirmButtonColor: '#2563eb'
+        });
+        return;
+    }
+
+    $.post('{{ route("customers.store") }}', {
+        _token: '{{ csrf_token() }}',
+        name: name,
+        phone_number: phone
+    })
+    .done(function (newCustomer) {
+        $('#addCustomerModal').addClass('hidden');
+        $('#customer_input').val(newCustomer.name);
+        customer = newCustomer;
+        Swal.fire({
+            icon: 'success',
+            title: 'Pelanggan Berhasil Disimpan',
+            text: `${newCustomer.name} telah ditambahkan ke daftar pelanggan.`,
+            showConfirmButton: false,
+            timer: 1500,
+            timerProgressBar: true
+        });
+    })
+    .fail(function () {
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal!',
+            text: 'Terjadi kesalahan saat menyimpan pelanggan baru.',
+            confirmButtonColor: '#dc2626'
+        });
+    });
+});
+
+// Tutup suggestion saat klik di luar
+$(document).on('click', function (e) {
+    if (!$(e.target).closest('#customer_input, #customer_suggestions').length) {
+        $('#customer_suggestions').hide();
+    }
+});
+
 </script>
 @endpush

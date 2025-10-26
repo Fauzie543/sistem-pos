@@ -14,7 +14,8 @@ return new class extends Migration
         Schema::create('products', function (Blueprint $table) {
             $table->id();
             $table->foreignId('category_id')->constrained('categories');
-            $table->string('sku')->unique()->comment('Stock Keeping Unit');
+            $table->string('sku')->comment('Stock Keeping Unit');
+            $table->unique(['sku', 'company_id', 'outlet_id']);
             $table->string('name');
             $table->text('description')->nullable();
             $table->unsignedBigInteger('purchase_price');

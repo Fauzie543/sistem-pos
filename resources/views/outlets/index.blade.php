@@ -40,7 +40,8 @@ $(function () {
             { data: 'address', name: 'address' },
             { data: 'phone', name: 'phone' },
             { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center' }
-        ]
+        ],
+        dom: '<"flex justify-between items-center mb-4"lf>rt<"flex justify-between items-center mt-4"ip>'
     });
 
     $('#addOutletBtn').on('click', function () {
