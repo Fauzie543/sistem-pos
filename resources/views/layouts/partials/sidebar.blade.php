@@ -1,19 +1,29 @@
 <aside id="logo-sidebar" class="fixed top-0 left-0 z-40 w-64 h-screen pt-14 transition-all duration-300 bg-white border-r border-gray-200 sm:translate-x-0 dark:bg-gray-800 dark:border-gray-700" aria-label="Sidebar">
 
     <div class="h-full px-3 pb-4 overflow-y-auto bg-white dark:bg-gray-800">
-        {{-- Tombol Toggle diletakkan di sini agar tidak terpengaruh logika role --}}
-        <div class="flex justify-end pt-1">
-             <button id="sidebar-toggle" class="p-1.5 rounded-md text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400">
-                <svg id="icon-minimize" class="w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m15 19-7-7 7-7"/>
-                </svg>
-                <svg id="icon-expand" class="w-6 h-6 hidden" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 5 7 7-7 7"/>
-                </svg>
-            </button>
-        </div>
-
         <ul class="space-y-2 font-medium">
+            <li class="mt-3">
+                <button id="sidebar-toggle"
+                    class="flex items-center justify-between w-full p-2 text-gray-900 rounded-lg dark:text-white 
+                        hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 group">
+                    
+                    {{-- Tulisan MENU (disembunyikan saat minimize) --}}
+                    <span class="sidebar-text font-semibold text-m tracking-wide transition-all duration-200">MENU</span>
+                    
+                    {{-- Ikon Panah / X --}}
+                    <svg id="icon-minimize" class="w-5 h-5 text-gray-500 transition-all duration-200" 
+                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                            stroke-width="2" d="m15 19-7-7 7-7" />
+                    </svg>
+                    <svg id="icon-expand" class="w-5 h-5 text-gray-500 hidden transition-all duration-200"
+                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                            stroke-width="2" d="m9 5 7 7-7 7" />
+                    </svg>
+                </button>
+            </li>
+
 
             {{-- =============================================== --}}
             {{-- BLOK KHUSUS UNTUK SUPER ADMIN --}}

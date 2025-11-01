@@ -31,9 +31,9 @@ class PlanSeeder extends Seeder
         ]);
 
         $jasaBasic->tiers()->createMany([
-            ['key' => 'jasa_basic_monthly', 'price' => 149000, 'duration_months' => 1],
-            ['key' => 'jasa_basic_semi_annually', 'price' => 745000, 'duration_months' => 6],
-            ['key' => 'jasa_basic_annually', 'price' => 1490000, 'duration_months' => 12],
+            ['key' => 'jasa_basic_monthly', 'price' => 179000, 'duration_months' => 1],
+            ['key' => 'jasa_basic_semi_annually', 'price' => 890000, 'duration_months' => 6],
+            ['key' => 'jasa_basic_annually', 'price' => 1790000, 'duration_months' => 12],
         ]);
 
         // === PAKET JASA PRO ===
@@ -59,9 +59,9 @@ class PlanSeeder extends Seeder
         ]);
 
         $jasaPro->tiers()->createMany([
-            ['key' => 'jasa_pro_monthly', 'price' => 249000, 'duration_months' => 1],
-            ['key' => 'jasa_pro_semi_annually', 'price' => 1245000, 'duration_months' => 6],
-            ['key' => 'jasa_pro_annually', 'price' => 2490000, 'duration_months' => 12],
+            ['key' => 'jasa_pro_monthly', 'price' => 279000, 'duration_months' => 1],
+            ['key' => 'jasa_pro_semi_annually', 'price' => 1390000, 'duration_months' => 6],
+            ['key' => 'jasa_pro_annually', 'price' => 2790000, 'duration_months' => 12],
         ]);
 
         // === PAKET F&B BASIC ===
@@ -81,9 +81,9 @@ class PlanSeeder extends Seeder
         ]);
 
         $fnbBasic->tiers()->createMany([
-            ['key' => 'fnb_basic_monthly', 'price' => 129000, 'duration_months' => 1],
-            ['key' => 'fnb_basic_semi_annually', 'price' => 645000, 'duration_months' => 6],
-            ['key' => 'fnb_basic_annually', 'price' => 1290000, 'duration_months' => 12],
+            ['key' => 'fnb_basic_monthly', 'price' => 159000, 'duration_months' => 1],
+            ['key' => 'fnb_basic_semi_annually', 'price' => 790000, 'duration_months' => 6],
+            ['key' => 'fnb_basic_annually', 'price' => 1590000, 'duration_months' => 12],
         ]);
 
         // === PAKET F&B PRO ===
@@ -109,8 +109,8 @@ class PlanSeeder extends Seeder
 
         $fnbPro->tiers()->createMany([
             ['key' => 'fnb_pro_monthly', 'price' => 229000, 'duration_months' => 1],
-            ['key' => 'fnb_pro_semi_annually', 'price' => 1145000, 'duration_months' => 6],
-            ['key' => 'fnb_pro_annually', 'price' => 2290000, 'duration_months' => 12],
+            ['key' => 'fnb_pro_semi_annually', 'price' => 1290000, 'duration_months' => 6],
+            ['key' => 'fnb_pro_annually', 'price' => 2590000, 'duration_months' => 12],
         ]);
     }
 }

@@ -18,7 +18,7 @@
                 {{-- =============================================== --}}
                 <a href="{{ route('dashboard') }}" class="flex ms-2 md:me-24">
                     {{-- Gunakan variabel $appLogo yang sudah didefinisikan di atas --}}
-                    <img src="{{ asset('assets/images/kaslo-icon.png') }}" class="h-8 me-3" alt="App Logo" />
+                    <img src="{{ asset('assets/images/logo.png') }}" class="h-10 me-3 object-contain" alt="App Logo" />
                     
                     {{-- Gunakan variabel $appName yang sudah didefinisikan di atas --}}
                     <span class="self-center text-xl font-semibold sm:text-2xl whitespace-nowrap dark:text-white">

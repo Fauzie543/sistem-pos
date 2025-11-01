@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\ProfileController;
@@ -71,8 +72,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/{ticket}/replies', [SupportTicketController::class, 'replies'])->name('replies');
     });
 
-    Route::post('/switch-outlet', function (Request $request) {
-        session(['active_outlet_id' => $request->outlet_id]);
+    Route::match(['get', 'post'], '/switch-outlet', function (Request $request) {
+        if ($request->isMethod('post') && $request->has('outlet_id')) {
+            session(['active_outlet_id' => $request->get('outlet_id')]);
+        }
         return back();
     })->name('outlet.switch');
     

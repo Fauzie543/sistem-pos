@@ -14,6 +14,8 @@ return new class extends Migration
         Schema::create('promos', function (Blueprint $table) {
             $table->id();
             $table->foreignId('company_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('outlet_id')->nullable()->constrained()->cascadeOnDelete();
+            $table->index(['company_id', 'outlet_id']);
             $table->string('name');
             $table->enum('type', ['percent', 'fixed'])->default('percent');
             $table->decimal('value', 10, 2); // 10 => berarti 10%
