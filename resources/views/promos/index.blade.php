@@ -5,6 +5,78 @@
 @push('styles')
 <style>
     div.dt-container div.dt-search input { width: 15rem; }
+
+    /* === Select2 - Gaya konsisten dengan input Tailwind === */
+    .select2-container--default .select2-selection--multiple {
+        display: flex !important;
+        align-items: center !important;
+        min-height: 42px !important; /* ✅ Samakan tinggi input lain */
+        border: 1px solid #d1d5db !important; /* border-gray-300 */
+        border-radius: 0.375rem !important; /* rounded-md */
+        padding: 4px 8px !important;
+        background-color: #fff !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        transition: all 0.2s ease-in-out;
+    }
+
+    /* Fokus border biru */
+    .select2-container--default.select2-container--focus .select2-selection--multiple {
+        border-color: #3b82f6 !important; /* blue-500 */
+        box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
+    }
+
+    /* Tag produk */
+    .select2-container--default .select2-selection--multiple .select2-selection__choice {
+        background-color: #3b82f6 !important; /* blue-500 */
+        border: none !important;
+        color: white !important;
+        border-radius: 0.375rem !important;
+        padding: 2px 8px !important;
+        margin-top: 4px !important;
+        margin-right: 4px !important;
+        font-size: 0.875rem !important;
+    }
+
+    /* Tombol hapus tag */
+    .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+        color: white !important;
+        margin-right: 4px !important;
+        font-weight: bold !important;
+    }
+
+    /* Field input pencarian */
+    .select2-container--default .select2-search--inline .select2-search__field {
+        margin-top: 4px !important;
+        font-size: 0.875rem !important;
+        color: #374151 !important; /* gray-700 */
+        height: 30px !important;
+    }
+
+    /* Dropdown */
+    .select2-dropdown {
+        border: 1px solid #d1d5db !important;
+        border-radius: 0.5rem !important;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        padding: 4px;
+    }
+
+    /* Item hasil */
+    .select2-results__option {
+        padding: 8px 10px !important;
+        border-radius: 0.375rem !important;
+        cursor: pointer;
+    }
+
+    /* Hover item */
+    .select2-results__option--highlighted {
+        background-color: #eff6ff !important; /* blue-50 */
+        color: #1e3a8a !important; /* blue-900 */
+    }
+
+    /* Pastikan tinggi container luar ikut */
+    .select2-container {
+        width: 100% !important;
+    }
 </style>
 @endpush
 
@@ -34,6 +106,27 @@
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+$(document).ready(function() {
+    // === Inisialisasi Select2 ===
+    $('#products').select2({
+        placeholder: 'Pilih satu atau beberapa produk...',
+        width: '100%',
+        allowClear: true
+    });
+
+    // Reset select2 setiap kali modal dibuka
+    $('#addPromoBtn').on('click', function() {
+        $('#products').val(null).trigger('change');
+        $('#promoModal').removeClass('hidden');
+    });
+
+    // Tutup modal
+    $('#cancelBtn, .close-modal').on('click', function() {
+        $('#promoModal').addClass('hidden');
+    });
+});
+</script>
 
 <script>
 $(function () {
